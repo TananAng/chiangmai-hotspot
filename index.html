@@ -44,7 +44,9 @@ label.radio:has(input:checked){background:var(--chip-on);color:var(--chip-on-ink
 label.radio input{accent-color:var(--accent);margin:0}
 input[type=range]{accent-color:var(--accent);width:140px}
 .grid{display:grid;grid-template-columns:minmax(300px,440px) 1fr;gap:14px;align-items:start}
-@media(max-width:900px){.grid{grid-template-columns:1fr}}
+@media(max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.grid>*,.stack>*{min-width:0}
+.stack{grid-template-columns:minmax(0,1fr)}
 .mapcard{padding:10px;position:sticky;top:8px}
 @media(max-width:900px){.mapcard{position:static}}
 .mapwrap{position:relative}.zoom{position:absolute;left:8px;top:8px;display:flex;flex-direction:column;gap:4px}.zoom button{width:34px;height:30px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;font-size:18px;line-height:1;cursor:pointer;opacity:.92}.zoom button:hover{background:var(--chip)}
@@ -84,11 +86,12 @@ details summary{cursor:pointer;font-weight:500}
 .src{font-size:12.5px;color:var(--ink3);margin-top:14px}
 a{color:var(--accent)}
 .tablewrap{overflow-x:auto}
+.hrow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.hrow h1{flex:1}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>แผนที่จุดความร้อนและพื้นที่ Hot Spot จังหวัดเชียงใหม่</h1>
+  <div class="hrow"><h1>แผนที่จุดความร้อนและพื้นที่ Hot Spot จังหวัดเชียงใหม่</h1><button type="button" class="chip" id="lang" style="flex:none;font-weight:700">EN</button></div>
   <p class="sub">ข้อมูลย้อนหลัง (ไม่ใช่แบบจำลองทำนายความเสี่ยง) · จุดความร้อน VIIRS NOAA-20 (375 ม.) ปี 2020–2025 จาก NASA FIRMS · วิเคราะห์ด้วย Kernel Density และ Getis-Ord Gi* บนกริด 0.01° (ประมาณ 1.1 กม. ต่อเซลล์) · ลากเพื่อเลื่อน กดปุ่ม + / − เพื่อซูม ชี้หรือแตะเพื่อดูค่าแต่ละเซลล์</p>
 
   <div class="card controls" role="group" aria-label="ตัวกรอง">
@@ -96,16 +99,16 @@ a{color:var(--accent)}
     <div class="row"><span class="lbl">เดือน</span>
       <select id="month" aria-label="เลือกเดือน"></select>
       <span class="lbl" style="margin-left:10px">ชั้นแผนที่</span>
-      <label class="radio"><input type="radio" name="layer" value="kde" checked>ความหนาแน่น (KDE)</label>
+      <label class="radio"><input type="radio" name="layer" value="kde" checked><span>ความหนาแน่น (KDE)</span></label>
       <label class="radio"><input type="radio" name="layer" value="gi">Hot Spot (Gi*)</label>
-      <label class="radio"><input type="radio" name="layer" value="raw">จำนวนจุดต่อเซลล์</label>
-      <label class="radio"><input type="radio" name="layer" value="lc">ประเภทพื้นที่ (WorldCover)</label>
-      <label class="radio" id="lcHotL" style="display:none"><input type="checkbox" id="lcHot">ซ้อน Hot Spot (Gi*)</label>
+      <label class="radio"><input type="radio" name="layer" value="raw"><span>จำนวนจุดต่อเซลล์</span></label>
+      <label class="radio"><input type="radio" name="layer" value="lc"><span>ประเภทพื้นที่ (WorldCover)</span></label>
+      <label class="radio" id="lcHotL" style="display:none"><input type="checkbox" id="lcHot"><span>ซ้อน Hot Spot (Gi*)</span></label>
     </div>
     <div class="row"><span class="lbl">ความเรียบ KDE</span><input type="range" id="sigma" min="2" max="12" step="1" value="5" aria-label="ความเรียบของ KDE"><span id="sigmaV" class="lbl" style="min-width:60px"></span>
       <span class="lbl" style="margin-left:10px">รัศมี Gi*</span><input type="range" id="radius" min="5" max="25" step="5" value="10" aria-label="รัศมีเพื่อนบ้านของ Gi*"><span id="radiusV" class="lbl" style="min-width:60px"></span>
-      <label class="radio" style="margin-left:10px"><input type="checkbox" id="c95" checked>Gi* แสดงเฉพาะความเชื่อมั่น ≥ 95%</label>
-      <label class="radio" title="ใช้วิธีปรับแก้ FDR (Benjamini–Hochberg, q = 0.05) เพื่อลดเซลล์ที่ดูเหมือนร้อนเพราะบังเอิญ"><input type="checkbox" id="fdr">คัดเฉพาะพื้นที่ที่ชัวร์จริง (ลดผลบังเอิญ)</label></div>
+      <label class="radio" style="margin-left:10px"><input type="checkbox" id="c95" checked><span>Gi* แสดงเฉพาะความเชื่อมั่น ≥ 95%</span></label>
+      <label class="radio" title="ใช้วิธีปรับแก้ FDR (Benjamini–Hochberg, q = 0.05) เพื่อลดเซลล์ที่ดูเหมือนร้อนเพราะบังเอิญ"><input type="checkbox" id="fdr"><span>คัดเฉพาะพื้นที่ที่ชัวร์จริง (ลดผลบังเอิญ)</span></label></div>
   </div>
 
   <div class="grid">
@@ -240,7 +243,16 @@ function monthlyTable(D){
 if(typeof module!=='undefined') module.exports={buildMask,countsFor,kde,gistar,monthlyTable,blur};
 
 (function(){
-const MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+let LANG='th';try{const sv=localStorage.getItem('lang');if(sv==='en'||sv==='th')LANG=sv;}catch(_){}
+const T=(a,b)=>LANG==='en'?b:a;
+const MON_TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'],MON_EN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let MON=LANG==='en'?MON_EN:MON_TH;
+const EN_S={"แผนที่จุดความร้อนและพื้นที่ Hot Spot จังหวัดเชียงใหม่": "Chiang Mai Fire Hotspot Map and Hot Spot Areas", "ข้อมูลย้อนหลัง (ไม่ใช่แบบจำลองทำนายความเสี่ยง) · จุดความร้อน VIIRS NOAA-20 (375 ม.) ปี 2020–2025 จาก NASA FIRMS · วิเคราะห์ด้วย Kernel Density และ Getis-Ord Gi* บนกริด 0.01° (ประมาณ 1.1 กม. ต่อเซลล์) · ลากเพื่อเลื่อน กดปุ่ม + / − เพื่อซูม ชี้หรือแตะเพื่อดูค่าแต่ละเซลล์": "Historical data (not a risk-prediction model) · VIIRS NOAA-20 active-fire detections (375 m), 2020–2025, from NASA FIRMS · Analysed with Kernel Density and Getis-Ord Gi* on a 0.01° grid (about 1.1 km per cell) · Drag to pan, use + / − to zoom, hover or tap to see each cell's values", "ปี": "Year", "เดือน": "Month", "ชั้นแผนที่": "Map layer", "ความเรียบ KDE": "KDE smoothing", "รัศมี Gi*": "Gi* radius", "รีเซ็ต": "Reset", "ที่มา: NASA FIRMS VIIRS NOAA-20 (375 ม.) 2020–2025 · เส้นเขต: OpenGISData-Thailand · ข้อมูลย้อนหลัง ไม่ใช่การพยากรณ์": "Source: NASA FIRMS VIIRS NOAA-20 (375 m) 2020–2025 · Boundaries: OpenGISData-Thailand · Historical data, not a forecast", "บันทึกแผนที่เป็นภาพ PNG": "Save map as PNG image", "สรุปผลที่พบ": "Key findings", "<b>แนวทางที่สอดคล้องกับผล</b> (เป็นข้อเสนอ ไม่ใช่ผลวิเคราะห์โดยตรง)": "<b>Suggested actions consistent with the findings</b> (proposals, not direct analysis results)", "จุดความร้อนรายเดือน แยกตามปี": "Monthly hotspots by year", "คลิกเดือนบนกราฟเพื่อกรองแผนที่ · เลื่อนเมาส์เพื่อดูค่า · ใช้แป้นพิมพ์ได้ที่ตัวเลือก \"เดือน\" ด้านบนและตารางท้ายหน้า": "Click a month on the chart to filter the map · Hover to see values · Keyboard users can use the \"Month\" selector above and the table at the bottom of the page", "ฝนกับจุดความร้อน (ทั้งจังหวัด ค่าเฉลี่ย 6 ปี)": "Rainfall vs hotspots (whole province, 6-year average)", "คลิกแท่งเพื่อเลือกปี": "Click a bar to select a year", "เทียบรายปี (6 ช่อง ใช้สเกลสีเดียวกัน)": "Year-by-year comparison (6 panels, same colour scale)", "ความหนาแน่น KDE ตามตัวกรองเดือนและความเรียบที่เลือก เทียบกันได้ตรงๆ เพราะสีสูงสุดร่วมกันทุกปี": "KDE density using the selected month filter and smoothing. The panels are directly comparable because they share one maximum colour value across all years.", "บันทึกภาพเปรียบเทียบ": "Save comparison image", "จุดความร้อนอยู่ในพื้นที่ประเภทไหน": "What land cover do hotspots fall on?", "5 พื้นที่ Hot Spot สูงสุด": "Top 5 Hot Spot areas", "คลิกรายการเพื่อซูมแผนที่ไปยังจุดนั้น": "Click an item to zoom the map to that location", "จุดความร้อนรายอำเภอ": "Hotspots by district", "ตารางข้อมูลจำนวนจุดความร้อน (ปี × เดือน)": "Hotspot count table (year × month)", "ขั้นตอนการทำงาน": "Workflow", "<b>1 รวบรวมข้อมูล (5 ชุด)</b>จุดความร้อน FIRMS · ขอบจังหวัด · ขอบอำเภอ · ฝน/อุณหภูมิ NASA POWER · การใช้ที่ดิน ESA WorldCover": "<b>1 Collect data (5 datasets)</b>FIRMS hotspots · province boundary · district boundary · NASA POWER rainfall/temperature · ESA WorldCover land cover", "<b>2 เตรียมข้อมูล</b>ตัดจุดเหนือผิวน้ำ 240 จุด · เก็บเฉพาะในเขตเชียงใหม่ เหลือ 67,376 จุด · นับลงกริด 1.1 กม. และรายอำเภอ": "<b>2 Prepare data</b>Remove 240 over-water points · keep only points inside Chiang Mai, leaving 67,376 · count into 1.1 km grid cells and by district", "<b>3 วิเคราะห์</b>Kernel Density · Getis-Ord Gi* + FDR · ทดสอบรัศมี · เทียบกับฝนและประเภทพื้นที่": "<b>3 Analyse</b>Kernel Density · Getis-Ord Gi* + FDR · radius test · compare with rainfall and land cover", "<b>4 แสดงผล</b>แผนที่โต้ตอบ · กราฟรายเดือน/ปี · อันดับอำเภอ · ตารางข้อมูล": "<b>4 Present</b>Interactive map · monthly/yearly charts · district ranking · data table", "<b>5 สรุป</b>ผลที่พบ ข้อจำกัด และแนวทางที่สอดคล้องกับผล": "<b>5 Summarise</b>Findings, limitations and actions consistent with the findings", "ฐานข้อมูล GIS ที่แอปนี้ใช้": "GIS database used by this app", "แอปอ่านผลจากไฟล์ GIS 3 ชุด (GeoJSON/CSV) ชุดเดียวกับที่อัปโหลดเป็นเลเยอร์ใน ArcGIS Online Web Map ของโครงการ (Mahidol ArcGIS Online) จึงเปิดไฟล์เดียวกันในโปรแกรม GIS เพื่อตรวจสอบหรือทำต่อได้": "The app reads results from 3 GIS files (GeoJSON/CSV), the same files uploaded as layers in the project's ArcGIS Online Web Map (Mahidol ArcGIS Online), so the same files can be opened in GIS software to verify or continue the work.", "ส่วนของแอป": "App section", "เลเยอร์ GIS (ไฟล์)": "GIS layer (file)", "ฟิลด์หลัก": "Main fields", "แผนที่ Hot Spot (Gi*) และ KDE": "Hot Spot (Gi*) and KDE maps", "chiangmai_grid_1km_analysis (โพลิกอนกริด 19,103 ช่อง)": "chiangmai_grid_1km_analysis (grid polygons, 19,103 cells)", "แผนที่และอันดับรายอำเภอ": "District map and ranking", "chiangmai_districts_hotspots (โพลิกอนอำเภอ)": "chiangmai_districts_hotspots (district polygons)", "กราฟรายเดือน/รายปี และฝน": "Monthly/yearly charts and rainfall", "hotspots_chiangmai_2020_2025 (จุด 67,376 จุด)": "hotspots_chiangmai_2020_2025 (67,376 points)", "ประเภทพื้นที่ (การใช้ที่ดิน)": "Land cover", "ทั้งสามชุดข้างต้น (ได้จาก ESA WorldCover)": "All three files above (derived from ESA WorldCover)", "หมายเหตุ: ใช้วิธีเดียวกับเครื่องมือของ ArcGIS (Kernel Density, Getis-Ord Gi*) แต่คำนวณด้วยโค้ดของทีมเอง ไม่ได้รันในโปรแกรม ArcGIS แล้วนำผลมาจัดเก็บเป็นเลเยอร์ใน Web Map": "Note: the methods are the same as ArcGIS tools (Kernel Density, Getis-Ord Gi*), but the calculations were run in the team's own code, not inside ArcGIS; the results were then stored as layers in the Web Map.", "วิธีการและข้อจำกัด": "Methods and limitations", "<b>ข้อมูล:</b> จุดความร้อน VIIRS NOAA-20 จาก NASA FIRMS 386,988 จุด → ตัดจุดที่ตรวจพบเหนือผิวน้ำ 240 จุด (เก็บเฉพาะชนิด 0 ที่ NASA สันนิษฐานว่าเป็นไฟพืชพรรณ) → เก็บเฉพาะในเขตเชียงใหม่ เหลือ <b>67,376 จุด</b> (ไม่ได้คัดตามระดับความมั่นใจของดาวเทียม) · ดึงข้อมูล พ.ย. 2026": "<b>Data:</b> 386,988 VIIRS NOAA-20 hotspots from NASA FIRMS → removed 240 points detected over water (kept only type 0, which NASA presumes to be vegetation fire) → kept only points inside Chiang Mai, leaving <b>67,376 points</b> (not filtered by satellite confidence level) · data retrieved Nov 2026", "<b>KDE:</b> ทำจุดให้เป็นสีไล่ระดับ ยิ่งเข้มยิ่งมีจุดหนาแน่น": "<b>KDE:</b> turns points into a colour gradient; the darker the colour, the denser the hotspots", "<b>Hot Spot (Gi*):</b> ตรวจว่าแต่ละช่อง 1.1 กม. \"ร้อนผิดปกติเมื่อเทียบกับช่องรอบข้าง\" หรือไม่ ค่า z ยิ่งสูงยิ่งมั่นใจ (1.65 / 1.96 / 2.58 = 90 / 95 / 99%) ค่าเริ่มต้นแสดงเฉพาะ ≥ 95% ติ๊ก \"คัดเฉพาะพื้นที่ที่ชัวร์จริง\" เพื่อกันผลบังเอิญ (FDR) ตอนดูทุกปี ทุกเดือน ช่องร้อนเหลือ 6,446 จาก 6,643 ช่อง แปลว่าผลเปลี่ยนน้อย ค่าความมั่นใจนี้เป็นค่าประมาณ (คำนวณด้วยการแจกแจงปกติ)": "<b>Hot Spot (Gi*):</b> tests whether each 1.1 km cell is \"unusually hot compared with its neighbouring cells\". The higher the z value, the more confident (1.65 / 1.96 / 2.58 = 90 / 95 / 99%). By default only ≥ 95% is shown. Tick \"Keep only robust areas\" to guard against chance results (FDR): for all years and all months, hot cells drop from 6,643 to 6,446, so the result changes little. These confidence levels are approximate (computed with a normal distribution)", "<b>ค่าเริ่มต้น 5 กม. / 10 กม.:</b> เลือกจากการดูแผนที่ ไม่ได้ผ่านการทดสอบ ตารางด้านล่างแสดงว่าอันดับเปลี่ยนตามรัศมี มีเพียง อ.ฮอดที่อยู่ใน 5 อันดับแรกทุกรัศมี": "<b>Defaults 5 km / 10 km:</b> chosen by looking at the map, not by testing. The table below shows that the ranking changes with the radius; only Hot (Hod) district stays in the top 5 at every radius", "<b>ข้อควรระวัง:</b> จุดความร้อนไม่เท่ากับพื้นที่ไหม้จริง · ไฟกองเดียวอาจถูกนับหลายจุด · ใช้ดาวเทียม NOAA-20 ดวงเดียว ตัวเลขอาจต่ำกว่ารายงานที่รวมหลายดวง · เมฆหรือควันอาจบังได้ · แผนที่บอกรูปแบบ ไม่ได้บอกสาเหตุ": "<b>Cautions:</b> a hotspot is not the same as actual burned area · one fire may be counted as several points · only one satellite (NOAA-20) is used, so counts may be lower than reports that combine several satellites · cloud or smoke can block detection · the map shows patterns, not causes", "<b>รายอำเภอ:</b> นับจากจุดจริงในเขตอำเภอ ส่วนชื่ออำเภอของ Top 5 ใช้จุดกลางช่อง จึงอาจคลาดเคลื่อนริมเขต": "<b>Districts:</b> counted from actual points inside each district boundary; the district names for the Top 5 use the cell centre, so they may be inaccurate near boundaries", "<b>พื้นที่:</b> พื้นที่รวมจากเส้นเขต 22,025 ตร.กม. ใกล้เคียงตัวเลขทางการ (ประกาศกระทรวงมหาดไทย 2567: 14,022,546 ไร่ ≈ 22,436 ตร.กม.) ต่างกันราว 1.8%": "<b>Area:</b> the total area from the boundary file is 22,025 km², close to the official figure (Ministry of Interior announcement 2024: 14,022,546 rai ≈ 22,436 km²), a difference of about 1.8%", "<b>ข้อมูลเสริม:</b> ฝนและอุณหภูมิจาก NASA POWER (แบบจำลอง MERRA-2 ตารางราว 55×60 กม. จุดเดียวที่ 18.79°N 98.99°E ใช้แทนทั้งจังหวัด) · การใช้ที่ดินจาก ESA WorldCover 2021 (10 ม.) ใช้ดูว่าจุดความร้อนตกในพื้นที่ประเภทไหน เทียบกับสัดส่วนพื้นที่จริงที่สุ่มจุดทุก 0.005° ในเขตจังหวัด ทั้งสองส่วนเป็นภาพรวมเชิงบรรยาย ไม่ได้พิสูจน์สาเหตุ · ชั้นแผนที่ \"ประเภทพื้นที่\" นับพิกเซล 10 ม. ทั้งหมดในแต่ละเซลล์ 1.1 กม. แล้วแสดงประเภทที่พบมากที่สุด (สัดส่วนในคำอธิบายเมื่อชี้ปัดเป็นเลขคู่)": "<b>Supplementary data:</b> rainfall and temperature from NASA POWER (MERRA-2 model, grid cells of about 55×60 km; a single point at 18.79°N 98.99°E represents the whole province) · land cover from ESA WorldCover 2021 (10 m), used to see which land cover hotspots fall on, compared with the share of actual area sampled every 0.005° within the province. Both parts are descriptive overviews and do not prove causes · the \"Land cover\" map layer counts all 10 m pixels in each 1.1 km cell and shows the most common class (the shares in the hover tooltip are rounded to even numbers)", "ไม่มีแผนที่ฐาน เพราะหน้านี้โหลดภาพจากภายนอกไม่ได้": "No basemap, because this page cannot load images from external sources", "ความไวของ Top 5 ต่อรัศมี Gi* (ทุกปี ทุกเดือน)": "Sensitivity of the Top 5 to the Gi* radius (all years, all months)", "แหล่งข้อมูล 5 ชุด: (1) NASA FIRMS (VIIRS NOAA-20 Standard, คำขอรหัส 851561) · (2) เส้นเขตจังหวัดและ (3) เส้นเขตอำเภอ: OpenGISData-Thailand (GitHub, chingchai) · (4) ฝนและอุณหภูมิ: NASA POWER (MERRA-2) · (5) การใช้ที่ดิน: ESA WorldCover 2021 v200 (© ESA WorldCover project / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium) · ป้ายชื่ออำเภอวางที่จุดกลางอำเภอ เมืองเชียงใหม่ใช้พิกัดโดยประมาณ · ดึงข้อมูลจาก FIRMS เมื่อ พ.ย. 2026 · ใช้ NOAA-20 ดวงเดียว": "Data sources (5 datasets): (1) NASA FIRMS (VIIRS NOAA-20 Standard, request ID 851561) · (2) province boundary and (3) district boundary: OpenGISData-Thailand (GitHub, chingchai) · (4) rainfall and temperature: NASA POWER (MERRA-2) · (5) land cover: ESA WorldCover 2021 v200 (© ESA WorldCover project / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium) · District labels are placed at the district centre; Mueang Chiang Mai uses an approximate position · FIRMS data retrieved Nov 2026 · NOAA-20 satellite only", "ปิด": "Close", "คลิกขวา (หรือกดค้างบนมือถือ) ที่ภาพแล้วเลือกบันทึกรูปภาพ": "Right-click (or long-press on mobile) the image and choose Save image", "ความหนาแน่น (KDE)": "Density (KDE)", "จำนวนจุดต่อเซลล์": "Points per cell", "ประเภทพื้นที่ (WorldCover)": "Land cover (WorldCover)", "ซ้อน Hot Spot (Gi*)": "Overlay Hot Spot (Gi*)", "Gi* แสดงเฉพาะความเชื่อมั่น ≥ 95%": "Gi*: show only confidence ≥ 95%", "คัดเฉพาะพื้นที่ที่ชัวร์จริง (ลดผลบังเอิญ)": "Keep only robust areas (reduce chance results)"};
+const ATTRS=[[".controls", "aria-label", "ตัวกรอง", "Filters"], ["#month", "aria-label", "เลือกเดือน", "Select month"], ["#sigma", "aria-label", "ความเรียบของ KDE", "KDE smoothing"], ["#radius", "aria-label", "รัศมีเพื่อนบ้านของ Gi*", "Gi* neighbourhood radius"], ["label[title]", "title", "ใช้วิธีปรับแก้ FDR (Benjamini–Hochberg, q = 0.05) เพื่อลดเซลล์ที่ดูเหมือนร้อนเพราะบังเอิญ", "Uses FDR adjustment (Benjamini–Hochberg, q = 0.05) to reduce cells that look hot by chance"], ["#zin", "aria-label", "ซูมเข้า", "Zoom in"], ["#zout", "aria-label", "ซูมออก", "Zoom out"], ["#zreset", "aria-label", "รีเซ็ตมุมมอง", "Reset view"], [".wf", "aria-label", "ขั้นตอน: รวบรวมข้อมูล 5 ชุด เตรียมข้อมูล วิเคราะห์ แสดงผล สรุปและข้อเสนอแนะ", "Steps: collect 5 datasets, prepare data, analyse, present, summarise and recommend"], ["#ovImg", "alt", "ภาพแผนที่ที่ส่งออก", "Exported map image"]];
+const EN_D={'เมืองเชียงใหม่':'Mueang Chiang Mai','จอมทอง':'Chom Thong','แม่แจ่ม':'Mae Chaem','เชียงดาว':'Chiang Dao','ดอยสะเก็ด':'Doi Saket','แม่แตง':'Mae Taeng','แม่ริม':'Mae Rim','สะเมิง':'Samoeng','ฝาง':'Fang','แม่อาย':'Mae Ai','พร้าว':'Phrao','สันป่าตอง':'San Pa Tong','สันกำแพง':'San Kamphaeng','สันทราย':'San Sai','หางดง':'Hang Dong','ฮอด':'Hot (Hod)','ดอยเต่า':'Doi Tao','อมก๋อย':'Omkoi','สารภี':'Saraphi','เวียงแหง':'Wiang Haeng','ไชยปราการ':'Chai Prakan','แม่วาง':'Mae Wang','แม่ออน':'Mae On','ดอยหล่อ':'Doi Lo','กัลยาณิวัฒนา':'Galyani Vadhana'};
+const EN_P={'พะเยา':'Phayao','เชียงราย':'Chiang Rai','แพร่':'Phrae','ตาก':'Tak','สุโขทัย':'Sukhothai','กำแพงเพชร':'Kamphaeng Phet','พิษณุโลก':'Phitsanulok','ลำปาง':'Lampang','อุตรดิตถ์':'Uttaradit','ลำพูน':'Lamphun','แม่ฮ่องสอน':'Mae Hong Son'};
+const dName=n=>T('อ.'+n,EN_D[n]||n);
+const jn=a=>a.join(T(' ',', '));
 const YEARS=[2020,2021,2022,2023,2024,2025];
 const G=D.grid, nx=G.nx, ny=G.ny;
 const LAT0=18.8, CK=Math.cos(LAT0*Math.PI/180);
@@ -255,7 +267,7 @@ const $=id=>document.getElementById(id);
 const fmt=n=>Math.round(n).toLocaleString('en-US');
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function monthSet(){ if(st.month==='all')return null; if(st.month==='season')return new Set([2,3,4]); return new Set([+st.month]); }
-function monthLabel(){ if(st.month==='all')return 'ทุกเดือน'; if(st.month==='season')return 'ก.พ.–เม.ย.'; return MON[+st.month-1]; }
+function monthLabel(){ if(st.month==='all')return T('ทุกเดือน','All months'); if(st.month==='season')return T('ก.พ.–เม.ย.','Feb–Apr'); return MON[+st.month-1]; }
 function yearLabel(){ return st.year==null?'2020–2025':String(st.year); }
 
 // ---- controls ----
@@ -268,14 +280,15 @@ function mkChip(label,y,color){
 yc.appendChild(mkChip('ทั้งหมด',null));
 YEARS.forEach(y=>yc.appendChild(mkChip(y,y,`var(--s${y})`)));
 const msel=$('month');
-msel.innerHTML='<option value="all">ทุกเดือน</option><option value="season">ฤดูไฟ (ก.พ.–เม.ย.)</option>'+MON.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+function buildMsel(){const v=st.month;msel.innerHTML=`<option value="all">${T('ทุกเดือน','All months')}</option><option value="season">${T('ฤดูไฟ (ก.พ.–เม.ย.)','Fire season (Feb–Apr)')}</option>`+MON.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');msel.value=v;}
+buildMsel();
 msel.onchange=()=>{st.month=msel.value;update();};
 document.querySelectorAll('input[name=layer]').forEach(r=>r.onchange=()=>{st.layer=r.value;$('lcHotL').style.display=st.layer==='lc'?'':'none';update();});
 $('lcHot').onchange=e=>{st.lcHot=e.target.checked;update();};
-$('sigma').oninput=e=>{st.sigma=+e.target.value;$('sigmaV').textContent='≈ '+st.sigma+' กม.';};$('sigma').onchange=()=>update();
+$('sigma').oninput=e=>{st.sigma=+e.target.value;$('sigmaV').textContent='≈ '+st.sigma+T(' กม.',' km');};$('sigma').onchange=()=>update();
 $('c95').onchange=e=>{st.c95=e.target.checked;update();};
 $('fdr').onchange=e=>{st.fdr=e.target.checked;$('c95').disabled=st.fdr;update();};
-$('radius').oninput=e=>{st.radius=+e.target.value;$('radiusV').textContent='≈ '+st.radius+' กม.';};$('radius').onchange=()=>update();
+$('radius').oninput=e=>{st.radius=+e.target.value;$('radiusV').textContent='≈ '+st.radius+T(' กม.',' km');};$('radius').onchange=()=>update();
 
 // ---- map geometry ----
 const bounds=(()=>{let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const r of D.cm)for(const p of r){a=Math.min(a,p[0]);c=Math.max(c,p[0]);b=Math.min(b,p[1]);d=Math.max(d,p[1]);}const m=0.12;return{x0:a-m,y0:b-m,x1:c+m,y1:d+m};})();
@@ -296,6 +309,7 @@ const SEQ=['#fff1cf','#fdd38a','#fb9e4a','#e8601c','#b6341a','#6e1a12'];
 function hex2rgb(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
 function seq(t){t=Math.max(0,Math.min(1,t));const f=t*(SEQ.length-1),i=Math.min(SEQ.length-2,Math.floor(f)),u=f-i;const a=hex2rgb(SEQ[i]),b=hex2rgb(SEQ[i+1]);return`rgb(${a.map((v,k)=>Math.round(v+(b[k]-v)*u)).join(',')})`;}
 const GI=[[2.58,'#9e1f14','ร้อนมาก (99%)'],[1.96,'#e8601c','ร้อน (95%)'],[1.65,'#f6b9a0','ร้อนเล็กน้อย (90%)'],[-1.65,null,'ไม่มีนัยสำคัญ'],[-1.96,'#9ec5f4','เย็นเล็กน้อย (90%)'],[-2.58,'#3987e5','เย็น (95%)'],[-99,'#184f95','เย็นมาก (99%)']];
+const GI_TH=GI.map(g=>g[2]),GI_EN=['Very hot (99%)','Hot (95%)','Slightly hot (90%)','Not significant','Slightly cold (90%)','Cold (95%)','Very cold (99%)'];
 function erfc(x){const z=Math.abs(x),t=1/(1+.5*z),r=t*Math.exp(-z*z-1.26551223+t*(1.00002368+t*(.37409196+t*(.09678418+t*(-.18628806+t*(.27886807+t*(-1.13520398+t*(1.48851587+t*(-.82215223+t*.17087277)))))))));return x>=0?r:2-r;}
 function giColor(z){if(Math.abs(z)<cur.zmin)return null;if(z>=2.58)return GI[0][1];if(z>=1.96)return GI[1][1];if(z>=0)return GI[2][1];if(z<=-2.58)return GI[6][1];if(z<=-1.96)return GI[5][1];return GI[4][1];}
 
@@ -357,7 +371,8 @@ function kdeRaster(k,kmax,U){
   o.putImageData(im,0,0);return c;
 }
 let layerCv=null;
-const LCN=['ป่า/ต้นไม้','ทุ่งหญ้า','พื้นที่เกษตร','สิ่งปลูกสร้าง','อื่นๆ (น้ำ ดินโล่ง ไม้พุ่ม)'];
+const LCN_TH=['ป่า/ต้นไม้','ทุ่งหญ้า','พื้นที่เกษตร','สิ่งปลูกสร้าง','อื่นๆ (น้ำ ดินโล่ง ไม้พุ่ม)'],LCN_EN=['Forest / trees','Grassland','Cropland','Built-up','Other (water, bare ground, shrub)'];
+let LCN=LANG==='en'?LCN_EN:LCN_TH;
 const LCD=D.lc;function lcFr(i,c){return (LCD.fr[c].charCodeAt(i)-48)*2;}
 function lcCols(){const d=matchMedia('(prefers-color-scheme:dark)').matches;return d?['#199e70','#c98500','#9a78ea','#f0efec','#8a897f']:['#1baf7a','#eda100','#7a4fd0','#3b3a37','#b9b7ae'];}
 function buildLayer(){
@@ -378,9 +393,9 @@ function cellLL(x,y){return[G.x0+(x+.5)*G.dx,G.y0+(y+.5)*G.dx];}
 let off=null;
 const DIST=D.dist,NDIST=DIST.names.length;
 const L1=new Set(['ฝาง','เชียงดาว','แม่แจ่ม','จอมทอง','อมก๋อย','พร้าว','ฮอด','แม่แตง']);
-const PLACES=DIST.lab.filter(l=>l[0]!=='เมืองเชียงใหม่').map(l=>['อ.'+l[0],l[1],l[2],L1.has(l[0])?1:2]);
+let PLACES=[];function buildPlaces(){PLACES=DIST.lab.filter(l=>l[0]!=='เมืองเชียงใหม่').map(l=>[dName(l[0]),l[1],l[2],L1.has(l[0])?1:2]);}
 const dix=new Int8Array(nx*ny);for(let i=0;i<dix.length;i++){const c=DIST.cells.charCodeAt(i)-48;dix[i]=c<0?-1:c;}
-function distLabel(i){const k=dix[i];return k<0?'นอกเขตอำเภอ':'อ.'+DIST.names[k];}
+function distLabel(i){const k=dix[i];return k<0?T('นอกเขตอำเภอ','Outside any district'):dName(DIST.names[k]);}
 function draw(){
   cv.style.touchAction=Z>1.02?'none':'pan-y';
   cx.clearRect(0,0,W,H);
@@ -389,7 +404,7 @@ function draw(){
   cx.lineWidth=0.8;cx.fillStyle=css('--ctx');cx.strokeStyle=css('--ctxline');
   for(const p of D.ctx){pathRings(p.r,cx);cx.fill();cx.stroke();}
   cx.fillStyle=css('--ink3');cx.font='12px Sarabun,sans-serif';cx.textAlign='center';
-  for(const p of D.ctx){const[c0,c1]=(p.c||(p.c=cent(p.r)));const X=px(c0),Y=py(c1);if(X>30&&X<W-30&&Y>14&&Y<H-14)cx.fillText(p.n,X,Y);}
+  for(const p of D.ctx){const[c0,c1]=(p.c||(p.c=cent(p.r)));const X=px(c0),Y=py(c1);if(X>30&&X<W-30&&Y>14&&Y<H-14)cx.fillText(T(p.n,EN_P[p.n]||p.n),X,Y);}
   // province base
   pathRings(D.cm,cx);cx.fillStyle=css('--cm');cx.fill();
   cx.save();pathRings(D.cm,cx);cx.clip();
@@ -402,14 +417,14 @@ function draw(){
   if(st.layer==='gi'){cur.top.forEach((t,n)=>{const[lo,la]=cellLL(t.x,t.y);const X=px(lo),Y=py(la);cx.beginPath();cx.arc(X,Y,9,0,7);cx.fillStyle='rgba(255,255,255,.92)';cx.fill();cx.strokeStyle='#0b0b0b';cx.lineWidth=1.4;cx.stroke();cx.fillStyle='#0b0b0b';cx.font='700 11px Sarabun,sans-serif';cx.textAlign='center';cx.textBaseline='middle';cx.fillText(n+1,X,Y+.5);cx.textBaseline='alphabetic';});}
   // city
   const X=px(98.986),Y=py(18.788);cx.beginPath();cx.arc(X,Y,4,0,7);cx.fillStyle='#0b0b0b';cx.fill();cx.strokeStyle='#fff';cx.lineWidth=1.5;cx.stroke();
-  cx.font='700 12px Sarabun,sans-serif';cx.fillStyle=css('--ink');cx.textAlign='left';cx.strokeStyle=css('--surface');cx.lineWidth=3;cx.strokeText('เมืองเชียงใหม่',X+7,Y-6);cx.fillText('เมืองเชียงใหม่',X+7,Y-6);
+  cx.font='700 12px Sarabun,sans-serif';cx.fillStyle=css('--ink');cx.textAlign='left';cx.strokeStyle=css('--surface');cx.lineWidth=3;{const cn=T('เมืองเชียงใหม่','Chiang Mai City');cx.strokeText(cn,X+7,Y-6);cx.fillText(cn,X+7,Y-6);}
   // places
   cx.font='500 12px Sarabun,sans-serif';cx.textAlign='left';cx.lineJoin='round';
   for(const[nm,lo,la,lv]of PLACES){if(lv>1&&Z<1.7)continue;const X=px(lo),Y=py(la);if(X<20||X>W-20||Y<10||Y>H-10)continue;
     cx.beginPath();cx.arc(X,Y,2.6,0,7);cx.fillStyle=css('--ink');cx.fill();cx.strokeStyle=css('--surface');cx.lineWidth=1;cx.stroke();
     cx.lineWidth=3.5;cx.strokeStyle=css('--surface');cx.strokeText(nm,X+5,Y+4);cx.fillStyle=css('--ink');cx.fillText(nm,X+5,Y+4);}
   {const X=px(98.487),Y=py(18.588);if(X>20&&X<W-20&&Y>10&&Y<H-10){cx.beginPath();cx.moveTo(X,Y-6);cx.lineTo(X+5.5,Y+4);cx.lineTo(X-5.5,Y+4);cx.closePath();cx.fillStyle=css('--ink');cx.fill();cx.strokeStyle=css('--surface');cx.lineWidth=1.2;cx.stroke();
-    cx.font='500 12px Sarabun,sans-serif';cx.textAlign='left';cx.lineWidth=3.5;cx.strokeText('ดอยอินทนนท์',X+8,Y+4);cx.fillStyle=css('--ink');cx.fillText('ดอยอินทนนท์',X+8,Y+4);}}
+    cx.font='500 12px Sarabun,sans-serif';cx.textAlign='left';cx.lineWidth=3.5;{const dn=T('ดอยอินทนนท์','Doi Inthanon');cx.strokeText(dn,X+8,Y+4);cx.fillStyle=css('--ink');cx.fillText(dn,X+8,Y+4);}}}
   if(hov){const x=px(G.x0+hov.ix*G.dx),y=py(G.y0+(hov.iy+1)*G.dx);cx.strokeStyle=css('--ink');cx.lineWidth=1.5;cx.strokeRect(x,y,cw,ch);}
   // graticule ticks
   cx.fillStyle=css('--ink3');cx.font='11px Sarabun,sans-serif';cx.textAlign='center';
@@ -420,24 +435,24 @@ function draw(){
   // scale bar 25 km
   const km=Z>=3?5:Z>=1.6?10:25,len=km/111.32*S*Z; // degrees lon*CK*S
   const bx=W-len-14,by=H-16;cx.fillStyle=css('--ink');cx.fillRect(bx,by,len,3);cx.fillRect(bx,by-3,1.5,9);cx.fillRect(bx+len-1.5,by-3,1.5,9);
-  cx.font='11px Sarabun,sans-serif';cx.textAlign='center';cx.fillText(km+' กม.',bx+len/2,by-6);
+  cx.font='11px Sarabun,sans-serif';cx.textAlign='center';cx.fillText(km+T(' กม.',' km'),bx+len/2,by-6);
   // north arrow
   cx.fillStyle=css('--ink');cx.beginPath();cx.moveTo(W-24,12);cx.lineTo(W-18,28);cx.lineTo(W-24,24);cx.lineTo(W-30,28);cx.closePath();cx.fill();cx.font='700 11px Sarabun,sans-serif';cx.textAlign='center';cx.fillText('N',W-24,42);
 }
 function legend(){
   const el=$('legend');
   if(st.layer==='gi'){
-    el.innerHTML='<div class="cls">'+[[GI[0][1],GI[0][2]],[GI[1][1],GI[1][2]],[GI[2][1],GI[2][2]],['transparent',GI[3][2]],[GI[4][1],GI[4][2]],[GI[5][1],GI[5][2]],[GI[6][1],GI[6][2]]].filter((it,ix)=>!((st.c95||st.fdr)&&(ix===2||ix===4))).map(([c,t])=>`<span><i style="background:${c}"></i>${t}</span>`).join('')+`</div><div class="rampl" style="margin-top:6px">วงกลมเลข 1–5 คือ 5 พื้นที่ร้อนสูงสุด · รัศมีเพื่อนบ้าน ${st.radius} กม. · ${st.fdr?(isFinite(cur.fdrZ)?`คัดเฉพาะที่ชัวร์จริง (FDR, q = 0.05): เกณฑ์ z ≥ ${cur.fdrZ.toFixed(2)} · เซลล์ร้อนที่ยังผ่าน ${fmt(cur.hf)} จาก ${fmt(cur.h95)} เซลล์ที่ผ่านเกณฑ์ 95%`:'คัดเฉพาะที่ชัวร์จริง: ไม่มีเซลล์ผ่านเกณฑ์'):(st.c95?'แสดงเฉพาะ ≥ 95% (ติ๊กออกเพื่อดู 90%)':'รวมระดับ 90% ซึ่งมีผลบวกลวงได้มาก')}</div>`;
+    el.innerHTML='<div class="cls">'+[[GI[0][1],GI[0][2]],[GI[1][1],GI[1][2]],[GI[2][1],GI[2][2]],['transparent',GI[3][2]],[GI[4][1],GI[4][2]],[GI[5][1],GI[5][2]],[GI[6][1],GI[6][2]]].filter((it,ix)=>!((st.c95||st.fdr)&&(ix===2||ix===4))).map(([c,t])=>`<span><i style="background:${c}"></i>${t}</span>`).join('')+`</div><div class="rampl" style="margin-top:6px">${T('วงกลมเลข 1–5 คือ 5 พื้นที่ร้อนสูงสุด · รัศมีเพื่อนบ้าน '+st.radius+' กม. · ','Circled numbers 1–5 mark the 5 hottest areas · neighbourhood radius '+st.radius+' km · ')}${st.fdr?(isFinite(cur.fdrZ)?T(`คัดเฉพาะที่ชัวร์จริง (FDR, q = 0.05): เกณฑ์ z ≥ ${cur.fdrZ.toFixed(2)} · เซลล์ร้อนที่ยังผ่าน ${fmt(cur.hf)} จาก ${fmt(cur.h95)} เซลล์ที่ผ่านเกณฑ์ 95%`,`Robust areas only (FDR, q = 0.05): z ≥ ${cur.fdrZ.toFixed(2)} · ${fmt(cur.hf)} of the ${fmt(cur.h95)} cells passing the 95% threshold remain hot`):T('คัดเฉพาะที่ชัวร์จริง: ไม่มีเซลล์ผ่านเกณฑ์','Robust areas only: no cell passes the threshold')):(st.c95?T('แสดงเฉพาะ ≥ 95% (ติ๊กออกเพื่อดู 90%)','Showing only ≥ 95% (untick to include 90%)'):T('รวมระดับ 90% ซึ่งมีผลบวกลวงได้มาก','Includes the 90% level, which can contain many false positives'))}</div>`;
   }else if(st.layer==='lc'){
-    el.innerHTML=`<div>ประเภทพื้นที่ที่พบมากที่สุดในแต่ละเซลล์ 1.1 กม. (ไม่เปลี่ยนตามปี/เดือน)</div><div class="cls" style="margin-top:6px">${lcCols().map((c,k)=>`<span><i style="background:${c}"></i>${LCN[k]}</span>`).join('')}${st.lcHot?`<span><i style="background:${GI[0][1]}"></i>Hot Spot ร้อนมาก (99%)</span><span><i style="background:${GI[1][1]}"></i>Hot Spot ร้อน (95%)</span>`:''}</div><div class="rampl" style="margin-top:6px">เซลล์ส่วนใหญ่เป็นป่า จึงเห็นป่าเป็นสีหลัก · ชี้ที่เซลล์เพื่อดูสัดส่วนทุกประเภท · ที่มา ESA WorldCover 2021 (10 ม.)</div>`;
+    el.innerHTML=`<div>${T('ประเภทพื้นที่ที่พบมากที่สุดในแต่ละเซลล์ 1.1 กม. (ไม่เปลี่ยนตามปี/เดือน)','Most common land-cover class in each 1.1 km cell (does not change with year/month)')}</div><div class="cls" style="margin-top:6px">${lcCols().map((c,k)=>`<span><i style="background:${c}"></i>${LCN[k]}</span>`).join('')}${st.lcHot?`<span><i style="background:${GI[0][1]}"></i>${T('Hot Spot ร้อนมาก (99%)','Hot Spot: very hot (99%)')}</span><span><i style="background:${GI[1][1]}"></i>${T('Hot Spot ร้อน (95%)','Hot Spot: hot (95%)')}</span>`:''}</div><div class="rampl" style="margin-top:6px">${T('เซลล์ส่วนใหญ่เป็นป่า จึงเห็นป่าเป็นสีหลัก · ชี้ที่เซลล์เพื่อดูสัดส่วนทุกประเภท · ที่มา ESA WorldCover 2021 (10 ม.)','Most cells are forest, so forest dominates the colours · hover over a cell to see every class share · Source: ESA WorldCover 2021 (10 m)')}</div>`;
   }else if(st.layer==='kde'){
-    el.innerHTML=`<div>ความหนาแน่นของจุดความร้อน (จุด/ตร.กม., ${yearLabel()}, ${monthLabel()})</div><div class="cls" style="margin-top:6px">${kItems().map(([c,t])=>`<span><i style="background:${c}"></i>${t}</span>`).join('')}</div><div class="rampl" style="margin-top:6px">แบ่ง 5 ชั้นตามสเกลสี ชั้นสุดท้ายรวมค่าที่สูงกว่านั้นทั้งหมด (ค่าสูงสุดตัดที่เปอร์เซ็นไทล์ที่ 98)</div>`;
+    el.innerHTML=`<div>${T('ความหนาแน่นของจุดความร้อน (จุด/ตร.กม.,','Hotspot density (points/km²,')} ${yearLabel()}, ${monthLabel()})</div><div class="cls" style="margin-top:6px">${kItems().map(([c,t])=>`<span><i style="background:${c}"></i>${t}</span>`).join('')}</div><div class="rampl" style="margin-top:6px">${T('แบ่ง 5 ชั้นตามสเกลสี ชั้นสุดท้ายรวมค่าที่สูงกว่านั้นทั้งหมด (ค่าสูงสุดตัดที่เปอร์เซ็นไทล์ที่ 98)','Five classes along the colour scale; the last class includes all higher values (maximum clipped at the 98th percentile)')}</div>`;
   }else{
     const g=`linear-gradient(90deg,${SEQ.join(',')})`;
     const mx=cur.cmax;
-    el.innerHTML=`<div>จำนวนจุดความร้อนในแต่ละเซลล์ (จุด/เซลล์, ${yearLabel()}, ${monthLabel()})</div><div class="ramp" style="background:${g}"></div><div class="rampl"><span>0</span><span>${mx<10?mx.toFixed(2):mx.toFixed(0)}+ (เปอร์เซ็นไทล์ที่ 98)</span></div>`;
+    el.innerHTML=`<div>${T('จำนวนจุดความร้อนในแต่ละเซลล์ (จุด/เซลล์,','Hotspots in each cell (points/cell,')} ${yearLabel()}, ${monthLabel()})</div><div class="ramp" style="background:${g}"></div><div class="rampl"><span>0</span><span>${mx<10?mx.toFixed(2):mx.toFixed(0)}+ ${T('(เปอร์เซ็นไทล์ที่ 98)','(98th percentile)')}</span></div>`;
   }
-  $('mapTitle').textContent=({kde:'ความหนาแน่นจุดความร้อน (KDE)',gi:'Hot Spot Analysis (Getis-Ord Gi*)',raw:'จำนวนจุดความร้อนต่อเซลล์',lc:'ประเภทพื้นที่เด่นของแต่ละเซลล์ (ESA WorldCover 2021)'})[st.layer]+(st.layer==='lc'?(st.lcHot?` · ซ้อน Hot Spot Gi* (${yearLabel()} · ${monthLabel()})`:''):` · ${yearLabel()} · ${monthLabel()}`);
+  $('mapTitle').textContent=({kde:T('ความหนาแน่นจุดความร้อน (KDE)','Hotspot density (KDE)'),gi:'Hot Spot Analysis (Getis-Ord Gi*)',raw:T('จำนวนจุดความร้อนต่อเซลล์','Hotspots per cell'),lc:T('ประเภทพื้นที่เด่นของแต่ละเซลล์ (ESA WorldCover 2021)','Dominant land cover per cell (ESA WorldCover 2021)')})[st.layer]+(st.layer==='lc'?(st.lcHot?T(` · ซ้อน Hot Spot Gi* (${yearLabel()} · ${monthLabel()})`,` · with Hot Spot Gi* overlay (${yearLabel()} · ${monthLabel()})`):''):` · ${yearLabel()} · ${monthLabel()}`);
 }
 
 // ---- charts ----
@@ -448,22 +463,23 @@ function summaryBlock(){
   const dn=DIST.ct.map(c=>c.reduce((a,v)=>a+v,0)),idx=dn.map((_,k)=>k);
   const byN=[...idx].sort((a,b)=>dn[b]-dn[a]).slice(0,3),byD=[...idx].sort((a,b)=>dn[b]/DIST.area[b]-dn[a]/DIST.area[a])[0];
   const yt=YEARS.map(y=>table[y].reduce((a,v)=>a+v,0)),mn=Math.min(...yt),mxy=Math.max(...yt);
-  const nm=k=>'อ.'+DIST.names[k];
-  $('sumHint').textContent=`จากจุดความร้อน ${fmt(tot)} จุด ปี 2020–2025 ในเขตเชียงใหม่ (ทุกปี ทุกเดือน ไม่เปลี่ยนตามตัวกรอง)`;
+  const nm=k=>dName(DIST.names[k]);
+  $('sumHint').textContent=T(`จากจุดความร้อน ${fmt(tot)} จุด ปี 2020–2025 ในเขตเชียงใหม่ (ทุกปี ทุกเดือน ไม่เปลี่ยนตามตัวกรอง)`,`Based on ${fmt(tot)} hotspots in Chiang Mai, 2020–2025 (all years, all months; does not change with the filters)`);
+  const rhoS=E.rho.toFixed(2).replace('-','−');
   const L=[
-    `<b>เวลา:</b> ไฟกระจุกช่วง ก.พ.–เม.ย. รวม ${fa.toFixed(1)}% ของทั้งหมด เดือน ${MON[pk]} เดือนเดียว ${(mt[pk]/tot*100).toFixed(1)}%`,
-    `<b>ฝน:</b> เดือนที่ฝนน้อยมีจุดความร้อนมาก (Spearman ${E.rho.toFixed(2).replace('-','−')}) อุณหภูมิไม่พบความสัมพันธ์ชัดเจน`,
-    `<b>พื้นที่:</b> จุดมากสุดที่ ${byN.map(nm).join(' ')} (รวม ${(byN.reduce((a,k)=>a+dn[k],0)/tot*100).toFixed(1)}%) ส่วนความหนาแน่นสูงสุดคือ ${nm(byD)} ${fmt(dn[byD]/DIST.area[byD]*100)} จุดต่อ 100 ตร.กม. และอยู่ใน Top 5 Hot Spot ทุกรัศมี 5–25 กม.`,
-    `<b>Hot Spot:</b> ช่องกริด 6,643 จาก 19,103 ช่อง (34.8%) ร้อนผิดปกติที่ความมั่นใจ 95% เหลือ 6,446 ช่องเมื่อคัดด้วย FDR (รัศมี 10 กม. ทุกปี ทุกเดือน)`,
-    `<b>ประเภทพื้นที่:</b> ${E.lc[0][2].toFixed(1)}% ของจุดอยู่ในป่า/ต้นไม้ ส่วนพื้นที่เกษตรและสิ่งปลูกสร้างมีจุดน้อยกว่าสัดส่วนพื้นที่`,
-    `<b>รายปี:</b> แกว่งมาก ตั้งแต่ ${fmt(mn)} จุด (2022) ถึง ${fmt(mxy)} จุด (2020) ปี 2023–2024 กลับมาราว 14,000 จุด จึงยังไม่เห็นแนวโน้มลดลงต่อเนื่อง`
+    T(`<b>เวลา:</b> ไฟกระจุกช่วง ก.พ.–เม.ย. รวม ${fa.toFixed(1)}% ของทั้งหมด เดือน ${MON[pk]} เดือนเดียว ${(mt[pk]/tot*100).toFixed(1)}%`,`<b>Timing:</b> Fires cluster in Feb–Apr, ${fa.toFixed(1)}% of all hotspots; ${MON[pk]} alone accounts for ${(mt[pk]/tot*100).toFixed(1)}%`),
+    T(`<b>ฝน:</b> เดือนที่ฝนน้อยมีจุดความร้อนมาก (Spearman ${rhoS}) อุณหภูมิไม่พบความสัมพันธ์ชัดเจน`,`<b>Rain:</b> Months with less rain have more hotspots (Spearman ${rhoS}); no clear relationship with temperature`),
+    T(`<b>พื้นที่:</b> จุดมากสุดที่ ${jn(byN.map(nm))} (รวม ${(byN.reduce((a,k)=>a+dn[k],0)/tot*100).toFixed(1)}%) ส่วนความหนาแน่นสูงสุดคือ ${nm(byD)} ${fmt(dn[byD]/DIST.area[byD]*100)} จุดต่อ 100 ตร.กม. และอยู่ใน Top 5 Hot Spot ทุกรัศมี 5–25 กม.`,`<b>Area:</b> Most hotspots are in ${jn(byN.map(nm))} (together ${(byN.reduce((a,k)=>a+dn[k],0)/tot*100).toFixed(1)}%); the highest density is in ${nm(byD)} at ${fmt(dn[byD]/DIST.area[byD]*100)} hotspots per 100 km², and it stays in the Hot Spot top 5 at every radius from 5 to 25 km`),
+    T(`<b>Hot Spot:</b> ช่องกริด 6,643 จาก 19,103 ช่อง (34.8%) ร้อนผิดปกติที่ความมั่นใจ 95% เหลือ 6,446 ช่องเมื่อคัดด้วย FDR (รัศมี 10 กม. ทุกปี ทุกเดือน)`,`<b>Hot Spot:</b> 6,643 of 19,103 grid cells (34.8%) are unusually hot at 95% confidence, dropping to 6,446 cells after FDR screening (10 km radius, all years, all months)`),
+    T(`<b>ประเภทพื้นที่:</b> ${E.lc[0][2].toFixed(1)}% ของจุดอยู่ในป่า/ต้นไม้ ส่วนพื้นที่เกษตรและสิ่งปลูกสร้างมีจุดน้อยกว่าสัดส่วนพื้นที่`,`<b>Land cover:</b> ${E.lc[0][2].toFixed(1)}% of hotspots fall in forest/trees; cropland and built-up areas have fewer hotspots than their share of the area`),
+    T(`<b>รายปี:</b> แกว่งมาก ตั้งแต่ ${fmt(mn)} จุด (2022) ถึง ${fmt(mxy)} จุด (2020) ปี 2023–2024 กลับมาราว 14,000 จุด จึงยังไม่เห็นแนวโน้มลดลงต่อเนื่อง`,`<b>By year:</b> Large swings, from ${fmt(mn)} hotspots (2022) to ${fmt(mxy)} (2020); 2023–2024 rebounded to about 14,000, so there is no clear continuing downward trend`)
   ];
   $('sumList').innerHTML=L.map(x=>`<li>${x}</li>`).join('');
   $('sumRec').innerHTML=[
-    `เฝ้าระวังและเตรียมกำลังช่วง ก.พ.–เม.ย. โดยเฉพาะ มี.ค. ก่อนฝนมา`,
-    `จัดลำดับพื้นที่ตามทั้งจำนวนจุดและความหนาแน่น ได้แก่ ${byN.map(nm).join(' ')} และ ${nm(byD)}`,
-    `เน้นมาตรการป้องกันในพื้นที่ป่า เพราะจุดส่วนใหญ่อยู่ที่นั่น`,
-    `ข้อจำกัด: จุดความร้อนไม่เท่ากับพื้นที่ไหม้ และใช้ดาวเทียมดวงเดียว ควรใช้ข้อมูลพื้นที่ไหม้และการเผาจริงยืนยันต่อ`
+    T(`เฝ้าระวังและเตรียมกำลังช่วง ก.พ.–เม.ย. โดยเฉพาะ มี.ค. ก่อนฝนมา`,`Stay alert and prepare resources in Feb–Apr, especially March, before the rains arrive`),
+    T(`จัดลำดับพื้นที่ตามทั้งจำนวนจุดและความหนาแน่น ได้แก่ ${byN.map(nm).join(' ')} และ ${nm(byD)}`,`Prioritise areas by both hotspot count and density: ${jn(byN.map(nm))}, and ${nm(byD)}`),
+    T(`เน้นมาตรการป้องกันในพื้นที่ป่า เพราะจุดส่วนใหญ่อยู่ที่นั่น`,`Focus prevention measures on forest areas, where most hotspots occur`),
+    T(`ข้อจำกัด: จุดความร้อนไม่เท่ากับพื้นที่ไหม้ และใช้ดาวเทียมดวงเดียว ควรใช้ข้อมูลพื้นที่ไหม้และการเผาจริงยืนยันต่อ`,`Limitation: a hotspot is not the same as burned area, and only one satellite is used; confirm with burned-area data and actual burning records`)
   ].map(x=>`<li>${x}</li>`).join('');
 }
 function rainChart(){
@@ -474,8 +490,8 @@ function rainChart(){
   const y1=nice(Math.max(...avgN)),y2=nice(Math.max(...maxR));
   const A={t:22,b:128},B={t:176,b:290};
   const Y1=v=>A.b-(A.b-A.t)*v/y1,Y2=v=>B.b-(B.b-B.t)*v/y2;
-  let s=`<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="กราฟแท่งเทียบจุดความร้อนเฉลี่ยรายเดือนกับฝนเฉลี่ยรายเดือน">`;
-  s+=`<text x="${m.l}" y="14" font-size="12" font-weight="700" fill="${css('--ink')}">จุดความร้อนเฉลี่ย (จุดต่อเดือน)</text><text x="${m.l}" y="${B.t-12}" font-size="12" font-weight="700" fill="${css('--ink')}">ฝนเฉลี่ย (มม./วัน) · เส้นแสดงช่วงต่ำสุด–สูงสุดของ 6 ปี</text>`;
+  let s=`<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="${T('กราฟแท่งเทียบจุดความร้อนเฉลี่ยรายเดือนกับฝนเฉลี่ยรายเดือน','Bar chart comparing average monthly hotspots with average monthly rainfall')}">`;
+  s+=`<text x="${m.l}" y="14" font-size="12" font-weight="700" fill="${css('--ink')}">${T('จุดความร้อนเฉลี่ย (จุดต่อเดือน)','Average hotspots (per month)')}</text><text x="${m.l}" y="${B.t-12}" font-size="12" font-weight="700" fill="${css('--ink')}">${T('ฝนเฉลี่ย (มม./วัน) · เส้นแสดงช่วงต่ำสุด–สูงสุดของ 6 ปี','Average rainfall (mm/day) · lines show the 6-year minimum–maximum')}</text>`;
   for(let k=0;k<=2;k++){const v=y1*k/2;s+=`<line x1="${m.l}" x2="${w-m.r}" y1="${Y1(v)}" y2="${Y1(v)}" stroke="${css('--grid')}"/><text x="${m.l-6}" y="${Y1(v)+4}" text-anchor="end" font-size="11" fill="${css('--ink3')}">${fmt(v)}</text>`;
     const u=y2*k/2;s+=`<line x1="${m.l}" x2="${w-m.r}" y1="${Y2(u)}" y2="${Y2(u)}" stroke="${css('--grid')}"/><text x="${m.l-6}" y="${Y2(u)+4}" text-anchor="end" font-size="11" fill="${css('--ink3')}">${u}</text>`;}
   MON.forEach((t,i)=>{const x=m.l+bw*i+bw*0.2,ww=bw*0.6,cx=x+ww/2;
@@ -484,15 +500,15 @@ function rainChart(){
     s+=`<text x="${cx}" y="${B.b+16}" text-anchor="middle" font-size="11" fill="${css('--ink2')}">${t}</text>`;
     s+=`<rect class="rh" data-i="${i}" x="${m.l+bw*i}" y="${A.t}" width="${bw}" height="${B.b-A.t}" fill="transparent"/>`;});
   s+='</svg>';const box=$('rainc');box.innerHTML=s;
-  box.querySelectorAll('.rh').forEach(r=>{const i=+r.dataset.i;r.onmousemove=e=>tip(e,`<b>${MON[i]}</b><div class="r"><span>จุดความร้อนเฉลี่ย</span><span>${fmt(Math.round(avgN[i]))}</span></div><div class="r"><span>ฝนเฉลี่ย</span><span>${avgR[i].toFixed(1)} มม./วัน</span></div><div class="r"><span>ช่วง 6 ปี</span><span>${minR[i].toFixed(1)}–${maxR[i].toFixed(1)}</span></div>`);r.onmouseleave=()=>tip();});
-  $('rainHint').innerHTML=`ฝนน้อยเดือนไหน ไฟมากเดือนนั้น: ค่าสหสัมพันธ์ Spearman ระหว่างจุดความร้อนกับฝนรายเดือน (${E.nmon} เดือน) = <b>${E.rho.toFixed(2).replace('-','−')}</b> ส่วนอุณหภูมิไม่พบความสัมพันธ์ชัดเจน (${E.rhoT.toFixed(2)}) · ที่มา NASA POWER (MERRA-2) จุดเดียว ใช้แทนทั้งจังหวัด ดูแนวโน้มตามฤดูได้ ไม่ใช่เหตุและผล`;
+  box.querySelectorAll('.rh').forEach(r=>{const i=+r.dataset.i;r.onmousemove=e=>tip(e,`<b>${MON[i]}</b><div class="r"><span>${T('จุดความร้อนเฉลี่ย','Average hotspots')}</span><span>${fmt(Math.round(avgN[i]))}</span></div><div class="r"><span>${T('ฝนเฉลี่ย','Average rainfall')}</span><span>${avgR[i].toFixed(1)} ${T('มม./วัน','mm/day')}</span></div><div class="r"><span>${T('ช่วง 6 ปี','6-year range')}</span><span>${minR[i].toFixed(1)}–${maxR[i].toFixed(1)}</span></div>`);r.onmouseleave=()=>tip();});
+  $('rainHint').innerHTML=T(`ฝนน้อยเดือนไหน ไฟมากเดือนนั้น: ค่าสหสัมพันธ์ Spearman ระหว่างจุดความร้อนกับฝนรายเดือน (${E.nmon} เดือน) = <b>${E.rho.toFixed(2).replace('-','−')}</b> ส่วนอุณหภูมิไม่พบความสัมพันธ์ชัดเจน (${E.rhoT.toFixed(2)}) · ที่มา NASA POWER (MERRA-2) จุดเดียว ใช้แทนทั้งจังหวัด ดูแนวโน้มตามฤดูได้ ไม่ใช่เหตุและผล`,`Less rain, more fire: the Spearman correlation between monthly hotspots and monthly rainfall (${E.nmon} months) is <b>${E.rho.toFixed(2).replace('-','−')}</b>; no clear relationship with temperature (${E.rhoT.toFixed(2)}) · Source: NASA POWER (MERRA-2), a single point representing the whole province. It shows seasonal patterns, not cause and effect`);
 }
 function lcChart(){
   const E=D.ext;const mx=Math.max(...E.lc.map(r=>Math.max(r[2],r[3])));
-  let s=`<div class="cls" style="margin-bottom:8px"><span><i style="background:${css('--ink2')}"></i>% ของจุดความร้อน</span><span><i style="background:${css('--accent')};opacity:.45"></i>% ของพื้นที่จังหวัด</span></div>`;
-  E.lc.forEach(r=>{s+=`<div style="margin:7px 0"><div style="font-size:13px;margin-bottom:2px">${r[0]}</div><div style="display:flex;align-items:center;gap:8px"><div style="flex:1"><div style="height:9px;border-radius:3px;background:${css('--ink2')};width:${Math.max(r[2]/mx*100,0.6)}%"></div><div style="height:9px;border-radius:3px;background:${css('--accent')};opacity:.45;margin-top:3px;width:${Math.max(r[3]/mx*100,0.6)}%"></div></div><div style="font-size:12px;color:${css('--ink2')};min-width:92px;text-align:right">${r[2].toFixed(1)}% · ${r[3].toFixed(1)}%</div></div></div>`;});
+  let s=`<div class="cls" style="margin-bottom:8px"><span><i style="background:${css('--ink2')}"></i>${T('% ของจุดความร้อน','% of hotspots')}</span><span><i style="background:${css('--accent')};opacity:.45"></i>${T('% ของพื้นที่จังหวัด','% of province area')}</span></div>`;
+  E.lc.forEach((r,ri)=>{s+=`<div style="margin:7px 0"><div style="font-size:13px;margin-bottom:2px">${LCN[ri]}</div><div style="display:flex;align-items:center;gap:8px"><div style="flex:1"><div style="height:9px;border-radius:3px;background:${css('--ink2')};width:${Math.max(r[2]/mx*100,0.6)}%"></div><div style="height:9px;border-radius:3px;background:${css('--accent')};opacity:.45;margin-top:3px;width:${Math.max(r[3]/mx*100,0.6)}%"></div></div><div style="font-size:12px;color:${css('--ink2')};min-width:92px;text-align:right">${r[2].toFixed(1)}% · ${r[3].toFixed(1)}%</div></div></div>`;});
   $('lcc').innerHTML=s;
-  $('lcHint').innerHTML=`ทุกปี ทุกเดือน (ไม่เปลี่ยนตามตัวกรอง) · จุดความร้อน 67,376 จุด ตกในพื้นที่ป่า/ต้นไม้ ${E.lc[0][2].toFixed(1)}% สูงกว่าสัดส่วนพื้นที่ป่า (${E.lc[0][3].toFixed(1)}%) เล็กน้อย ช่วง มี.ค. สูงถึง ${E.marTree}% · ที่มา ESA WorldCover 2021 (10 ม.) ดูค่า ณ จุดกึ่งกลางของจุดความร้อน และแผนที่นี้ความแม่นยำรวมราว 77% จึงใช้ดูภาพรวมเท่านั้น`;
+  $('lcHint').innerHTML=T(`ทุกปี ทุกเดือน (ไม่เปลี่ยนตามตัวกรอง) · จุดความร้อน 67,376 จุด ตกในพื้นที่ป่า/ต้นไม้ ${E.lc[0][2].toFixed(1)}% สูงกว่าสัดส่วนพื้นที่ป่า (${E.lc[0][3].toFixed(1)}%) เล็กน้อย ช่วง มี.ค. สูงถึง ${E.marTree}% · ที่มา ESA WorldCover 2021 (10 ม.) ดูค่า ณ จุดกึ่งกลางของจุดความร้อน และแผนที่นี้ความแม่นยำรวมราว 77% จึงใช้ดูภาพรวมเท่านั้น`,`All years, all months (does not change with the filters) · ${fmt(67376)} hotspots, ${E.lc[0][2].toFixed(1)}% of which fall in forest/trees, slightly above forest's share of the province (${E.lc[0][3].toFixed(1)}%); as high as ${E.marTree}% in March · Source: ESA WorldCover 2021 (10 m), read at the centre of each hotspot; the map's overall accuracy is about 77%, so use it for an overview only`);
 }
 
 function monthlyChart(){
@@ -500,10 +516,10 @@ function monthlyChart(){
   let mx=0;YEARS.forEach(y=>table[y].forEach(v=>mx=Math.max(mx,v)));
   const nice=v=>{const p=Math.pow(10,Math.floor(Math.log10(v)));const f=v/p;return(f<=1?1:f<=2?2:f<=5?5:10)*p;};const ymax=nice(mx);
   const X=i=>m.l+iw*(i/11), Y=v=>m.t+ih*(1-v/ymax);
-  let s=`<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="กราฟเส้นจุดความร้อนรายเดือนแยกปี">`;
+  let s=`<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="${T('กราฟเส้นจุดความร้อนรายเดือนแยกปี','Line chart of monthly hotspots by year')}">`;
   for(let k=0;k<=4;k++){const v=ymax*k/4;s+=`<line x1="${m.l}" x2="${w-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css('--grid')}"/><text x="${m.l-6}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="${css('--ink3')}">${fmt(v)}</text>`;}
   MON.forEach((t,i)=>{s+=`<text x="${X(i)}" y="${h-8}" text-anchor="middle" font-size="11" fill="${css('--ink2')}" ${(st.month!=='all'&&st.month!=='season'&&+st.month===i+1)?'font-weight="700"':''}>${t}</text>`;});
-  s+=`<rect x="${X(1)-8}" y="${m.t}" width="${X(3)-X(1)+16}" height="${ih}" fill="${css('--ink3')}" opacity=".10"/><text x="${X(2)}" y="${m.t+12}" text-anchor="middle" font-size="11" fill="${css('--ink2')}">ฤดูไฟ</text><text transform="rotate(-90)" x="${-(m.t+ih/2)}" y="12" text-anchor="middle" font-size="11" fill="${css('--ink2')}">จุดความร้อน (จุดต่อเดือน)</text>`;
+  s+=`<rect x="${X(1)-8}" y="${m.t}" width="${X(3)-X(1)+16}" height="${ih}" fill="${css('--ink3')}" opacity=".10"/><text x="${X(2)}" y="${m.t+12}" text-anchor="middle" font-size="11" fill="${css('--ink2')}">${T('ฤดูไฟ','Fire season')}</text><text transform="rotate(-90)" x="${-(m.t+ih/2)}" y="12" text-anchor="middle" font-size="11" fill="${css('--ink2')}">${T('จุดความร้อน (จุดต่อเดือน)','Hotspots (per month)')}</text>`;
   if(st.month!=='all'&&st.month!=='season'){const i=+st.month-1;s+=`<rect x="${X(i)-12}" y="${m.t}" width="24" height="${ih}" fill="${css('--accent')}" opacity=".10"/>`;}
   YEARS.forEach(y=>{
     const on=st.year==null||st.year===y;const col=`var(--s${y})`;
@@ -515,7 +531,7 @@ function monthlyChart(){
   });
   {const av=MON.map((_,i)=>YEARS.reduce((a,y)=>a+table[y][i],0)/6);s+=`<polyline points="${av.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ')}" fill="none" stroke="${css('--ink2')}" stroke-width="1.6" stroke-dasharray="5 4" opacity=".9"/>`;}
   s+=`<line id="xh" x1="0" x2="0" y1="${m.t}" y2="${m.t+ih}" stroke="${css('--ink3')}" stroke-dasharray="3 3" style="display:none"/><rect id="hit" x="${m.l-10}" y="${m.t}" width="${iw+20}" height="${ih}" fill="transparent" style="cursor:pointer"/></svg>`;
-  s+=`<div class="cls" style="margin-top:6px">${YEARS.map(y=>`<span><i style="background:var(--s${y});border-radius:50%"></i>${y}</span>`).join('')}<span><svg width="18" height="6" style="vertical-align:middle"><line x1="0" y1="3" x2="18" y2="3" stroke="${css('--ink2')}" stroke-width="1.6" stroke-dasharray="5 4"/></svg> ค่าเฉลี่ย 6 ปี</span></div>`;
+  s+=`<div class="cls" style="margin-top:6px">${YEARS.map(y=>`<span><i style="background:var(--s${y});border-radius:50%"></i>${y}</span>`).join('')}<span><svg width="18" height="6" style="vertical-align:middle"><line x1="0" y1="3" x2="18" y2="3" stroke="${css('--ink2')}" stroke-width="1.6" stroke-dasharray="5 4"/></svg> ${T('ค่าเฉลี่ย 6 ปี','6-year average')}</span></div>`;
   const box=$('monthly');box.innerHTML=s;
   const svg=box.querySelector('svg'),hit=box.querySelector('#hit'),xh=box.querySelector('#xh');
   const idxOf=e=>{const r=svg.getBoundingClientRect();const x=(e.clientX-r.left)/r.width*w;return Math.max(0,Math.min(11,Math.round((x-m.l)/iw*11)));};
@@ -529,11 +545,11 @@ function yearlyChart(){
   const tot=yearTotals();const w=560,h=210,m={l:44,r:10,t:22,b:26};const iw=w-m.l-m.r,ih=h-m.t-m.b;
   const mx=Math.max(...tot);const nice=v=>{if(v<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(v)));const f=v/p;return(f<=1?1:f<=2?2:f<=5?5:10)*p;};const ymax=nice(mx);
   const Y=v=>m.t+ih*(1-v/ymax),bw=iw/6;
-  $('yearlyTitle').textContent=`จุดความร้อนรายปี (${monthLabel()})`;
-  let s=`<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="กราฟแท่งจุดความร้อนรายปี">`;
+  $('yearlyTitle').textContent=T(`จุดความร้อนรายปี (${monthLabel()})`,`Hotspots by year (${monthLabel()})`);
+  let s=`<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="${T('กราฟแท่งจุดความร้อนรายปี','Bar chart of hotspots by year')}">`;
   for(let k=0;k<=4;k++){const v=ymax*k/4;s+=`<line x1="${m.l}" x2="${w-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css('--grid')}"/><text x="${m.l-6}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="${css('--ink3')}">${fmt(v)}</text>`;}
   YEARS.forEach((y,i)=>{const x=m.l+bw*i+bw*0.2,ww=bw*0.6,top=Y(tot[i]),on=st.year==null||st.year===y;
-    s+=`<g class="bar" data-y="${y}" tabindex="0" role="button" aria-label="ปี ${y}: ${fmt(tot[i])} จุด กดเพื่อกรอง" style="cursor:pointer"><rect x="${x}" y="${m.t}" width="${ww}" height="${ih}" fill="transparent"/><path d="M${x},${m.t+ih}V${top+4}Q${x},${top} ${x+4},${top}H${x+ww-4}Q${x+ww},${top} ${x+ww},${top+4}V${m.t+ih}Z" fill="var(--s${y})" opacity="${on?1:.25}"/>
+    s+=`<g class="bar" data-y="${y}" tabindex="0" role="button" aria-label="${T(`ปี ${y}: ${fmt(tot[i])} จุด กดเพื่อกรอง`,`Year ${y}: ${fmt(tot[i])} hotspots, press to filter`)}" style="cursor:pointer"><rect x="${x}" y="${m.t}" width="${ww}" height="${ih}" fill="transparent"/><path d="M${x},${m.t+ih}V${top+4}Q${x},${top} ${x+4},${top}H${x+ww-4}Q${x+ww},${top} ${x+ww},${top+4}V${m.t+ih}Z" fill="var(--s${y})" opacity="${on?1:.25}"/>
     <text x="${x+ww/2}" y="${top-5}" text-anchor="middle" font-size="12" font-weight="${st.year===y?700:500}" fill="${css('--ink')}">${fmt(tot[i])}</text><text x="${x+ww/2}" y="${h-8}" text-anchor="middle" font-size="12" fill="${css('--ink2')}">${y}</text></g>`;});
   s+='</svg>';const box=$('yearly');box.innerHTML=s;
   box.querySelectorAll('.bar').forEach(g=>{const y=+g.dataset.y;g.onclick=()=>{st.year=st.year===y?null:y;update();};g.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();g.onclick();}};
@@ -545,33 +561,33 @@ function kpis(){
   const pk=mt.indexOf(Math.max(...mt));
   const a99=cur.s99*CELL_KM2, share=cur.s99/maskN*100;
   $('kpis').innerHTML=
-   `<div class="card kpi"><div class="v">${fmt(t)}</div><div class="k">จุดความร้อนตามตัวกรอง</div><div class="n">${yearLabel()} · ${monthLabel()}</div></div>
-    <div class="card kpi"><div class="v">${mt[pk]>0?MON[pk]:'–'}</div><div class="k">เดือนที่มีไฟมากสุด</div><div class="n">${fmt(mt[pk])} จุด (${yearLabel()})</div></div>
-    <div class="card kpi"><div class="v">${cur.s99>0?'≈ '+fmt(Math.round(a99/10)*10):'0'}<span style="font-size:14px;font-weight:500"> ตร.กม.</span></div><div class="k">พื้นที่ Hot Spot ที่ความเชื่อมั่น 99%</div><div class="n">${share.toFixed(1)}% ของจังหวัด · ${fmt(cur.s99)} เซลล์ · นับรวมช่องรอบกลุ่มจุดร้อน ไม่ใช่พื้นที่ไหม้จริง</div></div>`;
+   `<div class="card kpi"><div class="v">${fmt(t)}</div><div class="k">${T('จุดความร้อนตามตัวกรอง','Hotspots (current filter)')}</div><div class="n">${yearLabel()} · ${monthLabel()}</div></div>
+    <div class="card kpi"><div class="v">${mt[pk]>0?MON[pk]:'–'}</div><div class="k">${T('เดือนที่มีไฟมากสุด','Peak fire month')}</div><div class="n">${fmt(mt[pk])} ${T('จุด','hotspots')} (${yearLabel()})</div></div>
+    <div class="card kpi"><div class="v">${cur.s99>0?'≈ '+fmt(Math.round(a99/10)*10):'0'}<span style="font-size:14px;font-weight:500"> ${T('ตร.กม.','km²')}</span></div><div class="k">${T('พื้นที่ Hot Spot ที่ความเชื่อมั่น 99%','Hot Spot area at 99% confidence')}</div><div class="n">${T(`${share.toFixed(1)}% ของจังหวัด · ${fmt(cur.s99)} เซลล์ · นับรวมช่องรอบกลุ่มจุดร้อน ไม่ใช่พื้นที่ไหม้จริง`,`${share.toFixed(1)}% of the province · ${fmt(cur.s99)} cells · includes cells around hot clusters, not actual burned area`)}</div></div>`;
 }
 function nearSum(x,y){const R=Math.round(st.radius/CELLKM);let t=0;for(let dy=-R;dy<=R;dy++)for(let dx=-R;dx<=R;dx++){if(dx*dx+dy*dy>R*R)continue;const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=nx||yy>=ny)continue;t+=cur.c[yy*nx+xx];}return t;}
 function distSummary(){
   const ms=monthSet(),rows=[];let tot=0;
   for(let k=0;k<NDIST;k++){let n=0;DIST.ct[k].forEach((v,ym)=>{const y=2020+Math.floor(ym/12),m=ym%12+1;if((st.year==null||y===st.year)&&(ms==null||ms.has(m)))n+=v;});tot+=n;rows.push({k,n,a:DIST.area[k]});}
   rows.forEach(r=>r.d=r.n/r.a*100);rows.sort((a,b)=>b.d-a.d);const mx=rows.length&&rows[0].d>0?rows[0].d:1;
-  $('distHint').textContent=`${yearLabel()} · ${monthLabel()} · เรียงตามจุดต่อ 100 ตร.กม. (นับจากจุดจริงในเขตอำเภอ หารด้วยพื้นที่โพลิกอน) · คลิกชื่ออำเภอเพื่อซูม`;
-  $('dist').innerHTML='<div class="drows">'+rows.map(r=>`<button type="button" class="drow" data-k="${r.k}"><span class="dn">อ.${DIST.names[r.k]}</span><span class="db"><i style="width:${(r.d/mx*100).toFixed(1)}%"></i></span><span class="dv">${fmt(r.d)} <small>· ${fmt(r.n)} จุด (${tot?(r.n/tot*100).toFixed(1):0}%)</small></span></button>`).join('')+'</div>';
+  $('distHint').textContent=T(`${yearLabel()} · ${monthLabel()} · เรียงตามจุดต่อ 100 ตร.กม. (นับจากจุดจริงในเขตอำเภอ หารด้วยพื้นที่โพลิกอน) · คลิกชื่ออำเภอเพื่อซูม`,`${yearLabel()} · ${monthLabel()} · sorted by hotspots per 100 km² (counted from actual points inside each district, divided by polygon area) · click a district name to zoom`);
+  $('dist').innerHTML='<div class="drows">'+rows.map(r=>`<button type="button" class="drow" data-k="${r.k}"><span class="dn">${dName(DIST.names[r.k])}</span><span class="db"><i style="width:${(r.d/mx*100).toFixed(1)}%"></i></span><span class="dv">${fmt(r.d)} <small>· ${fmt(r.n)} ${T('จุด','hotspots')} (${tot?(r.n/tot*100).toFixed(1):0}%)</small></span></button>`).join('')+'</div>';
   document.querySelectorAll('#dist .drow').forEach(b=>b.onclick=()=>{const l=DIST.lab[+b.dataset.k];Z=3.2;OX=W/2-(l[1]-bounds.x0)*CK*S*Z;OY=H/2-(bounds.y1-l[2])*S*Z;draw();cv.scrollIntoView({block:'nearest',behavior:'smooth'});});
 }
 function topList(){
-  $('topHint').textContent=`เรียงตามค่า z ของ Gi* (${yearLabel()}, ${monthLabel()}, รัศมี ${st.radius} กม.)`;
+  $('topHint').textContent=T(`เรียงตามค่า z ของ Gi* (${yearLabel()}, ${monthLabel()}, รัศมี ${st.radius} กม.)`,`Sorted by Gi* z value (${yearLabel()}, ${monthLabel()}, radius ${st.radius} km)`);
   const el=$('top');
-  if(!cur.top.length){el.innerHTML='<li>ไม่มีพื้นที่ที่มีนัยสำคัญทางสถิติ (z &lt; '+cur.zmin.toFixed(2)+') ในตัวกรองนี้</li>';return;}
-  el.innerHTML=cur.top.map((t,n)=>{const[lo,la]=cellLL(t.x,t.y);return`<li><button type="button" class="lk" data-n="${n}">${distLabel(t.i)} — z = <b>${cur.z[t.i].toFixed(2)}</b> · ${fmt(nearSum(t.x,t.y))} จุดในรัศมี ${st.radius} กม.</button></li>`;}).join('');
+  if(!cur.top.length){el.innerHTML=T('<li>ไม่มีพื้นที่ที่มีนัยสำคัญทางสถิติ (z &lt; '+cur.zmin.toFixed(2)+') ในตัวกรองนี้</li>','<li>No statistically significant area (z &lt; '+cur.zmin.toFixed(2)+') under this filter</li>');return;}
+  el.innerHTML=cur.top.map((t,n)=>{const[lo,la]=cellLL(t.x,t.y);return`<li><button type="button" class="lk" data-n="${n}">${distLabel(t.i)} — z = <b>${cur.z[t.i].toFixed(2)}</b> · ${T(`${fmt(nearSum(t.x,t.y))} จุดในรัศมี ${st.radius} กม.`,`${fmt(nearSum(t.x,t.y))} hotspots within ${st.radius} km`)}</button></li>`;}).join('');
   el.querySelectorAll('.lk').forEach(b=>b.onclick=()=>{const t=cur.top[+b.dataset.n],[lo,la]=cellLL(t.x,t.y);zoomTo(lo,la);});
 }
 function tableHtml(){
   let mx=0;YEARS.forEach(y=>table[y].forEach(v=>mx=Math.max(mx,v)));
   const cell=v=>{const t=mx?Math.pow(v/mx,0.6):0;return `<td style="background:${v>0?seq(t):'transparent'};color:${t>0.62?'#fff':'#0b0b0b'}">${fmt(v)}</td>`;};
-  let s='<table><thead><tr><th>ปี</th>'+MON.map(m=>`<th>${m}</th>`).join('')+'<th>รวม</th></tr></thead><tbody>';
+  let s='<table><thead><tr><th>'+T('ปี','Year')+'</th>'+MON.map(m=>`<th>${m}</th>`).join('')+'<th>'+T('รวม','Total')+'</th></tr></thead><tbody>';
   YEARS.forEach(y=>{s+=`<tr><td>${y}</td>`+table[y].map(cell).join('')+`<td><b>${fmt(table[y].reduce((a,b)=>a+b,0))}</b></td></tr>`;});
   const col=new Array(12).fill(0);YEARS.forEach(y=>table[y].forEach((v,i)=>col[i]+=v));
-  s+=`<tr><td><b>รวม</b></td>`+col.map(v=>`<td><b>${fmt(v)}</b></td>`).join('')+`<td><b>${fmt(col.reduce((a,b)=>a+b,0))}</b></td></tr></tbody></table>`;
+  s+=`<tr><td><b>${T('รวม','Total')}</b></td>`+col.map(v=>`<td><b>${fmt(v)}</b></td>`).join('')+`<td><b>${fmt(col.reduce((a,b)=>a+b,0))}</b></td></tr></tbody></table>`;
   $('table').innerHTML=s;
 }
 
@@ -583,9 +599,9 @@ function cellAt(X,Y){const lon=bounds.x0+(X-OX)/(CK*S*Z),lat=bounds.y1-(Y-OY)/(S
 function cellTip(ev,c){
   if(!c){tip();if(hov){hov=null;draw();}return;}
   if(!hov||hov.ix!==c.ix||hov.iy!==c.iy){hov={ix:c.ix,iy:c.iy};redraw();}
-  ensureK();const i=c.i,z=cur.z[i];const cl=z>=2.58?'ร้อนมาก (99%)':z>=1.96?'ร้อน (95%)':z>=1.65?'ร้อนเล็กน้อย (90%)':z<=-2.58?'เย็นมาก (99%)':z<=-1.96?'เย็น (95%)':z<=-1.65?'เย็นเล็กน้อย (90%)':'ไม่มีนัยสำคัญ';
+  ensureK();const i=c.i,z=cur.z[i];const cl=GI[z>=2.58?0:z>=1.96?1:z>=1.65?2:z<=-2.58?6:z<=-1.96?5:z<=-1.65?4:3][2];
   const[lo,la]=cellLL(c.ix,c.iy);
-  tip(ev,`<b>${la.toFixed(3)}°N, ${lo.toFixed(3)}°E</b><div>${distLabel(c.i)} จ.เชียงใหม่</div><div class="r"><span>จุดในเซลล์</span><span>${fmt(cur.c[i])}</span></div><div class="r"><span>ความหนาแน่น KDE</span><span>${(cur.k[i]/CELL_KM2).toFixed(3)} /ตร.กม.</span></div><div class="r"><span>Gi* z</span><span>${z.toFixed(2)}</span></div><div>${cl}</div><div style="margin-top:4px;border-top:1px solid var(--line);padding-top:4px"><b>ประเภทพื้นที่</b> ${LCN.map((n,k)=>[n,lcFr(i,k)]).filter(a=>a[1]>=4).sort((a,b)=>b[1]-a[1]).map(a=>`${a[0].replace(/ \(.*/,'')} ${a[1]}%`).join(' · ')}</div>`);
+  tip(ev,`<b>${la.toFixed(3)}°N, ${lo.toFixed(3)}°E</b><div>${distLabel(c.i)}${T(' จ.เชียงใหม่',', Chiang Mai')}</div><div class="r"><span>${T('จุดในเซลล์','Points in cell')}</span><span>${fmt(cur.c[i])}</span></div><div class="r"><span>${T('ความหนาแน่น KDE','KDE density')}</span><span>${(cur.k[i]/CELL_KM2).toFixed(3)} ${T('/ตร.กม.','/km²')}</span></div><div class="r"><span>Gi* z</span><span>${z.toFixed(2)}</span></div><div>${cl}</div><div style="margin-top:4px;border-top:1px solid var(--line);padding-top:4px"><b>${T('ประเภทพื้นที่','Land cover')}</b> ${LCN.map((n,k)=>[n,lcFr(i,k)]).filter(a=>a[1]>=4).sort((a,b)=>b[1]-a[1]).map(a=>`${a[0].replace(/ \(.*/,'')} ${a[1]}%`).join(' · ')}</div>`);
 }
 const ptrs=new Map();let gest=null,moved=false;
 function startGest(){const a=[...ptrs.values()];if(a.length===1)gest={t:'pan',x:a[0].x,y:a[0].y,ox:OX,oy:OY};else if(a.length>=2)gest={t:'pinch',d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)||1,z:Z,ox:OX,oy:OY,cx:(a[0].x+a[1].x)/2,cy:(a[0].y+a[1].y)/2};else gest=null;}
@@ -613,8 +629,8 @@ $('zin').onclick=()=>zoomAt(1.6,W/2,H/2);$('zout').onclick=()=>zoomAt(1/1.6,W/2,
 cv.addEventListener('dblclick',e=>{const r=cv.getBoundingClientRect();zoomAt(1.8,e.clientX-r.left,e.clientY-r.top);});
 cv.addEventListener('wheel',e=>{if(!(e.ctrlKey||e.metaKey))return;e.preventDefault();const r=cv.getBoundingClientRect();zoomAt(e.deltaY<0?1.25:0.8,e.clientX-r.left,e.clientY-r.top);},{passive:false});
 
-function aria(){const t=cur.top[0];let loc='';if(t){const[lo,la]=cellLL(t.x,t.y);loc=` พื้นที่ Hot Spot สูงสุดอยู่ใน${distLabel(t.i)}`;}
-  cv.setAttribute('aria-label',`แผนที่ ${$('mapTitle').textContent} รวม ${fmt(cur.total)} จุด${loc}`);}
+function aria(){const t=cur.top[0];let loc='';if(t){const[lo,la]=cellLL(t.x,t.y);loc=T(` พื้นที่ Hot Spot สูงสุดอยู่ใน${distLabel(t.i)}`,` The highest Hot Spot area is in ${distLabel(t.i)}.`);}
+  cv.setAttribute('aria-label',T(`แผนที่ ${$('mapTitle').textContent} รวม ${fmt(cur.total)} จุด${loc}`,`Map: ${$('mapTitle').textContent}. ${fmt(cur.total)} hotspots in total.${loc}`));}
 // ---- overlay ----
 function showImg(c,name){$('ovImg').src=c.toDataURL('image/png');$('ov').style.display='block';}
 $('ovX').onclick=()=>{$('ov').style.display='none';};$('ov').addEventListener('click',e=>{if(e.target===$('ov'))$('ov').style.display='none';});
@@ -625,27 +641,27 @@ function exportMap(){
   const e=document.createElement('canvas');e.width=W*sc;e.height=Ht*sc;const g=e.getContext('2d');
   g.fillStyle=css('--surface');g.fillRect(0,0,e.width,e.height);g.setTransform(sc,0,0,sc,0,0);
   g.fillStyle=css('--ink');g.font='700 20px Sarabun,sans-serif';g.textAlign='left';g.fillText($('mapTitle').textContent,pad,30);
-  g.fillStyle=css('--ink2');g.font='13px Sarabun,sans-serif';g.fillText('จังหวัดเชียงใหม่ · จุดความร้อนย้อนหลัง VIIRS NOAA-20 375 ม. · กริด 0.01° (≈1.1 กม.)',pad,52);
+  g.fillStyle=css('--ink2');g.font='13px Sarabun,sans-serif';g.fillText(T('จังหวัดเชียงใหม่ · จุดความร้อนย้อนหลัง VIIRS NOAA-20 375 ม. · กริด 0.01° (≈1.1 กม.)','Chiang Mai Province · historical VIIRS NOAA-20 375 m hotspots · 0.01° grid (≈1.1 km)'),pad,52);
   const keepH=hov;hov=null;cx=g;g.save();g.setTransform(sc,0,0,sc,0,0);g.beginPath();g.rect(0,hd,W,H);g.clip();g.setTransform(sc,0,0,sc,0,hd*sc);draw();g.restore();g.setTransform(sc,0,0,sc,0,0);cx=cx0;hov=keepH;const Hx=H;W=W0;H=H0;S=S0;OX=OX0;OY=OY0;
   let y=hd+Hx+22;g.font='13px Sarabun,sans-serif';g.fillStyle=css('--ink');
   if(st.layer==='gi'){let x=pad;const items=GI.filter((it,ix)=>it[1]&&!((st.c95||st.fdr)&&(ix===2||ix===4)));
     for(const it of items){const t=it[2];g.fillStyle=it[1];g.fillRect(x,y-11,14,14);g.strokeStyle='rgba(0,0,0,.25)';g.strokeRect(x,y-11,14,14);g.fillStyle=css('--ink');g.fillText(t,x+20,y);x+=g.measureText(t).width+38;if(x>W-150){x=pad;y+=22;}}
-    g.fillStyle=css('--ink2');g.font='12px Sarabun,sans-serif';g.fillText(`รัศมีเพื่อนบ้าน ${st.radius} กม. · ${st.fdr?'ปรับแก้ FDR (BH, q = 0.05)':(st.c95?'แสดงเฉพาะความเชื่อมั่น ≥ 95%':'รวมระดับ 90%')} · วงกลมเลข 1–5 = พื้นที่ร้อนสูงสุด`,pad,y+24);
+    g.fillStyle=css('--ink2');g.font='12px Sarabun,sans-serif';g.fillText(T(`รัศมีเพื่อนบ้าน ${st.radius} กม. · ${st.fdr?'ปรับแก้ FDR (BH, q = 0.05)':(st.c95?'แสดงเฉพาะความเชื่อมั่น ≥ 95%':'รวมระดับ 90%')} · วงกลมเลข 1–5 = พื้นที่ร้อนสูงสุด`,`Neighbourhood radius ${st.radius} km · ${st.fdr?'FDR-adjusted (BH, q = 0.05)':(st.c95?'showing only ≥ 95% confidence':'including the 90% level')} · circled numbers 1–5 = hottest areas`),pad,y+24);
   }else if(st.layer==='lc'){
-    let x=pad;g.font='13px Sarabun,sans-serif';const its=lcCols().map((c,k)=>[c,LCN[k]]);if(st.lcHot)its.push([GI[0][1],'Hot Spot ร้อนมาก (99%)'],[GI[1][1],'Hot Spot ร้อน (95%)']);
+    let x=pad;g.font='13px Sarabun,sans-serif';const its=lcCols().map((c,k)=>[c,LCN[k]]);if(st.lcHot)its.push([GI[0][1],T('Hot Spot ร้อนมาก (99%)','Hot Spot: very hot (99%)')],[GI[1][1],T('Hot Spot ร้อน (95%)','Hot Spot: hot (95%)')]);
     for(const[c,tx]of its){g.fillStyle=c;g.fillRect(x,y-11,14,14);g.strokeStyle='rgba(0,0,0,.25)';g.strokeRect(x,y-11,14,14);g.fillStyle=css('--ink');g.fillText(tx,x+20,y);x+=g.measureText(tx).width+30;if(x>W-150){x=pad;y+=22;}}
-    g.fillStyle=css('--ink2');g.font='12px Sarabun,sans-serif';g.fillText('ประเภทพื้นที่ที่พบมากที่สุดในแต่ละเซลล์ 1.1 กม. · ESA WorldCover 2021 (10 ม.)',pad,y+24);
+    g.fillStyle=css('--ink2');g.font='12px Sarabun,sans-serif';g.fillText(T('ประเภทพื้นที่ที่พบมากที่สุดในแต่ละเซลล์ 1.1 กม. · ESA WorldCover 2021 (10 ม.)','Most common land-cover class in each 1.1 km cell · ESA WorldCover 2021 (10 m)'),pad,y+24);
   }else if(st.layer==='kde'){
     let x=pad;g.font='13px Sarabun,sans-serif';
     for(const[c,t]of kItems()){g.fillStyle=c;g.fillRect(x,y-11,14,14);g.strokeStyle='rgba(0,0,0,.25)';g.strokeRect(x,y-11,14,14);g.fillStyle=css('--ink');g.fillText(t,x+20,y);x+=g.measureText(t).width+38;}
-    g.fillStyle=css('--ink2');g.font='12px Sarabun,sans-serif';g.fillText(`ความหนาแน่น จุดความร้อนต่อ ตร.กม. (KDE σ ≈ ${st.sigma} กม.) · ชั้นสุดท้ายรวมค่าที่สูงกว่า · ค่าสูงสุดตัดที่เปอร์เซ็นไทล์ที่ 98`,pad,y+24);
+    g.fillStyle=css('--ink2');g.font='12px Sarabun,sans-serif';g.fillText(T(`ความหนาแน่น จุดความร้อนต่อ ตร.กม. (KDE σ ≈ ${st.sigma} กม.) · ชั้นสุดท้ายรวมค่าที่สูงกว่า · ค่าสูงสุดตัดที่เปอร์เซ็นไทล์ที่ 98`,`Density, hotspots per km² (KDE σ ≈ ${st.sigma} km) · last class includes all higher values · maximum clipped at the 98th percentile`),pad,y+24);
   }else{
     const gr=g.createLinearGradient(pad,0,pad+300,0);SEQ.forEach((c,i)=>gr.addColorStop(i/(SEQ.length-1),c));g.fillStyle=gr;g.fillRect(pad,y-10,300,12);
-    const mx=cur.cmax;g.fillStyle=css('--ink2');g.font='12px Sarabun,sans-serif';g.textAlign='left';g.fillText('0',pad,y+16);g.textAlign='right';g.fillText((mx<10?mx.toFixed(2):mx.toFixed(0))+'+ (เปอร์เซ็นไทล์ที่ 98)',pad+300,y+16);
-    g.textAlign='left';g.fillStyle=css('--ink');g.font='13px Sarabun,sans-serif';g.fillText('จำนวนจุดความร้อนต่อเซลล์ 1.1 กม.',pad+316,y+2);}
+    const mx=cur.cmax;g.fillStyle=css('--ink2');g.font='12px Sarabun,sans-serif';g.textAlign='left';g.fillText('0',pad,y+16);g.textAlign='right';g.fillText((mx<10?mx.toFixed(2):mx.toFixed(0))+T('+ (เปอร์เซ็นไทล์ที่ 98)','+ (98th percentile)'),pad+300,y+16);
+    g.textAlign='left';g.fillStyle=css('--ink');g.font='13px Sarabun,sans-serif';g.fillText(T('จำนวนจุดความร้อนต่อเซลล์ 1.1 กม.','Hotspots per 1.1 km cell'),pad+316,y+2);}
   g.fillStyle=css('--ink3');g.font='12px Sarabun,sans-serif';g.textAlign='left';
-  g.fillText('ที่มา: NASA FIRMS VIIRS NOAA-20 (คำขอ 851561) · เส้นเขตจังหวัดและอำเภอ: OpenGISData-Thailand'+(st.layer==='lc'?' · ESA WorldCover 2021':''),pad,Ht-26);
-  g.fillText('ข้อมูลย้อนหลัง ไม่ใช่การพยากรณ์ · จุดความร้อนไม่เท่ากับพื้นที่ที่ถูกเผาจริง · ไม่มีแผนที่ฐาน',pad,Ht-9);
+  g.fillText(T('ที่มา: NASA FIRMS VIIRS NOAA-20 (คำขอ 851561) · เส้นเขตจังหวัดและอำเภอ: OpenGISData-Thailand','Source: NASA FIRMS VIIRS NOAA-20 (request 851561) · Province and district boundaries: OpenGISData-Thailand')+(st.layer==='lc'?' · ESA WorldCover 2021':''),pad,Ht-26);
+  g.fillText(T('ข้อมูลย้อนหลัง ไม่ใช่การพยากรณ์ · จุดความร้อนไม่เท่ากับพื้นที่ที่ถูกเผาจริง · ไม่มีแผนที่ฐาน','Historical data, not a forecast · a hotspot is not the same as actual burned area · no basemap'),pad,Ht-9);
   showImg(e,'chiangmai-hotspot-map.png');draw();
 }
 $('png').onclick=exportMap;
@@ -659,7 +675,7 @@ function renderCompare(){
   YEARS.forEach(y=>{const cnt=countsFor(D,y,ms);let t=0;for(let i=0;i<cnt.length;i++)t+=cnt[i];tots.push(t);const k=kde(cnt,mask,nx,ny,st.sigma/CELLKM);ks.push(k);for(let i=0;i<k.length;i++)if(mask[i]&&k[i]>0)pool.push(k[i]);});
   pool.sort((a,b)=>a-b);const kmax=pool.length?pool[Math.floor(pool.length*0.98)]:1;
   g.fillStyle=css('--surface');g.fillRect(0,0,w,Hc);g.fillStyle=css('--ink');g.font='700 15px Sarabun,sans-serif';g.textAlign='left';
-  g.fillText(`เทียบจุดความร้อนรายปี · ความหนาแน่น KDE · ${monthLabel()} · σ = ${st.sigma} กม.`,2,18);
+  g.fillText(T(`เทียบจุดความร้อนรายปี · ความหนาแน่น KDE · ${monthLabel()} · σ = ${st.sigma} กม.`,`Hotspots year by year · KDE density · ${monthLabel()} · σ = ${st.sigma} km`),2,18);
   if(!off2||off2.width!==nx){off2=document.createElement('canvas');off2.width=nx;off2.height=ny;}
   const o=off2.getContext('2d');
   YEARS.forEach((y,n)=>{
@@ -667,7 +683,7 @@ function renderCompare(){
     const X=lo=>x0+(lo-bounds.x0)*CK*s,Y=la=>y0+(bounds.y1-la)*s;
     const path=rs=>{g.beginPath();for(const r of rs){r.forEach((p,i)=>i?g.lineTo(X(p[0]),Y(p[1])):g.moveTo(X(p[0]),Y(p[1])));g.closePath();}};
     g.fillStyle=css('--ink');g.font='700 14px Sarabun,sans-serif';g.textAlign='left';g.fillText(String(y),x0,y0-8);
-    g.fillStyle=css('--ink2');g.font='12px Sarabun,sans-serif';g.textAlign='right';g.fillText(fmt(tots[n])+' จุด',x0+pw,y0-8);
+    g.fillStyle=css('--ink2');g.font='12px Sarabun,sans-serif';g.textAlign='right';g.fillText(fmt(tots[n])+T(' จุด',' hotspots'),x0+pw,y0-8);
     g.fillStyle=css('--land');g.fillRect(x0,y0,pw,ph);path(D.cm);g.fillStyle=css('--cm');g.fill();
     g.save();path(D.cm);g.clip();
     const rs=kdeRaster(ks[n],kmax,2);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(rs,X(G.x0),Y(G.y0+ny*G.dx),nx*G.dx*CK*s,ny*G.dx*s);
@@ -676,7 +692,7 @@ function renderCompare(){
   });
   {let x=2;const yb=Hc-28;g.font='12px Sarabun,sans-serif';g.textAlign='left';
    for(const[c,t]of kItems(kmax)){g.fillStyle=c;g.fillRect(x,yb-10,14,14);g.strokeStyle='rgba(0,0,0,.25)';g.strokeRect(x,yb-10,14,14);g.fillStyle=css('--ink');g.fillText(t,x+19,yb+1);x+=g.measureText(t).width+34;}
-   g.fillStyle=css('--ink2');g.fillText('จุดความร้อนต่อ ตร.กม. · ชั้นสุดท้ายรวมค่าที่สูงกว่า · ค่าสูงสุดตัดที่เปอร์เซ็นไทล์ที่ 98 รวมทุกปี',2,yb+22);}
+   g.fillStyle=css('--ink2');g.fillText(T('จุดความร้อนต่อ ตร.กม. · ชั้นสุดท้ายรวมค่าที่สูงกว่า · ค่าสูงสุดตัดที่เปอร์เซ็นไทล์ที่ 98 รวมทุกปี','Hotspots per km² · last class includes all higher values · maximum clipped at the 98th percentile across all years'),2,yb+22);}
 }
 $('cmpD').addEventListener('toggle',renderCompare);$('cmpPng').onclick=()=>showImg($('cmp'),'chiangmai-hotspot-compare-years.png');
 // ---- sensitivity ----
@@ -684,16 +700,27 @@ function sens(){
   const cnt=countsFor(D,null,null),rows=[];
   for(const r of [5,10,15,20,25]){const R=Math.round(r/CELLKM),z=gistar(cnt,mask,nx,ny,R),idx=[];for(let i=0;i<z.length;i++)if(mask[i])idx.push(i);idx.sort((a,b)=>z[b]-z[a]);
     const top=[],sep=Math.max(6,Math.round(1.6*R));for(const i of idx){if(top.length>=5||z[i]<1.96)break;const x=i%nx,y=Math.floor(i/nx);if(top.every(t=>Math.hypot(t.x-x,t.y-y)>sep))top.push({i,x,y});}
-    rows.push(`<tr><td>${r} กม.</td>${top.map(t=>`<td>${distLabel(t.i)}</td>`).join('')}</tr>`);}
-  $('sens').innerHTML='<table><thead><tr><th>รัศมี</th><th>อันดับ 1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead><tbody>'+rows.join('')+'</tbody></table><p class="hint">อำเภอของเซลล์ที่มีค่า z สูงสุด 5 อันดับ (เว้นระยะไม่ให้ซ้อนกัน) ถ้าอันดับเปลี่ยนน้อยเมื่อเปลี่ยนรัศมี แสดงว่าผลทนทาน</p>';
+    rows.push(`<tr><td>${r}${T(' กม.',' km')}</td>${top.map(t=>`<td>${distLabel(t.i)}</td>`).join('')}</tr>`);}
+  $('sens').innerHTML='<table><thead><tr><th>'+T('รัศมี','Radius')+'</th><th>'+T('อันดับ 1','Rank 1')+'</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead><tbody>'+rows.join('')+'</tbody></table><p class="hint">'+T('อำเภอของเซลล์ที่มีค่า z สูงสุด 5 อันดับ (เว้นระยะไม่ให้ซ้อนกัน) ถ้าอันดับเปลี่ยนน้อยเมื่อเปลี่ยนรัศมี แสดงว่าผลทนทาน','District of each of the 5 highest-z cells (kept apart so they do not overlap). If the ranking changes little when the radius changes, the result is robust')+'</p>';
 }
 $('sensD').addEventListener('toggle',()=>{if($('sensD').open)sens();});
 function update(){
   document.querySelectorAll('#yearChips .chip').forEach(b=>b.setAttribute('aria-pressed',String((st.year==null?'all':String(st.year))===b.dataset.y)));
-  $('sigmaV').textContent=`≈ ${st.sigma} กม.`;$('radiusV').textContent=`≈ ${st.radius} กม.`;
+  $('sigmaV').textContent=`≈ ${st.sigma}${T(' กม.',' km')}`;$('radiusV').textContent=`≈ ${st.radius}${T(' กม.',' km')}`;
   compute();draw();legend();kpis();aria();monthlyChart();yearlyChart();rainChart();lcChart();topList();distSummary();renderCompare();
 }
-function init(){size();tableHtml();summaryBlock();update();}
+function markStatic(){document.body.querySelectorAll('*').forEach(e=>{if(e.tagName==='SCRIPT'||e.closest('script'))return;const k=e.innerHTML.trim();if(Object.prototype.hasOwnProperty.call(EN_S,k)&&!e.children.length+e.querySelector('b,i,span')===0||Object.prototype.hasOwnProperty.call(EN_S,k)){e.dataset.th=e.innerHTML;}});}
+function applyLang(){
+  document.documentElement.lang=LANG;document.title=T('แผนที่จุดความร้อนและพื้นที่ Hot Spot จ.เชียงใหม่ 2020–2025','Chiang Mai Fire Hotspot Map and Hot Spot Areas, 2020–2025');
+  document.querySelectorAll('[data-th]').forEach(e=>{e.innerHTML=LANG==='en'?EN_S[e.dataset.th.trim()]:e.dataset.th;});
+  ATTRS.forEach(([sel,at,th,en])=>{const e=document.querySelector(sel);if(e)e.setAttribute(at,T(th,en));});
+  const lb=$('lang');lb.textContent=T('EN','ไทย');lb.setAttribute('aria-label',T('Switch to English','เปลี่ยนเป็นภาษาไทย'));lb.title=T('Switch to English','เปลี่ยนเป็นภาษาไทย');
+  MON=LANG==='en'?MON_EN:MON_TH;LCN=LANG==='en'?LCN_EN:LCN_TH;GI.forEach((g,i)=>{g[2]=T(GI_TH[i],GI_EN[i]);});
+  buildMsel();const ac=document.querySelector('#yearChips .chip[data-y="all"]');if(ac)ac.textContent=T('ทั้งหมด','All');buildPlaces();
+}
+function setLang(l){LANG=l;try{localStorage.setItem('lang',l);}catch(_){}applyLang();tableHtml();summaryBlock();update();if($('sensD').open)sens();}
+$('lang').onclick=()=>setLang(LANG==='en'?'th':'en');
+function init(){markStatic();applyLang();size();tableHtml();summaryBlock();update();}
 window.addEventListener('resize',()=>{size();draw();renderCompare();});
 if(window.matchMedia)window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{if(st.layer==='lc')buildLayer();draw();monthlyChart();yearlyChart();rainChart();lcChart();});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{draw();});
