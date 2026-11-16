@@ -637,7 +637,7 @@ $('ovX').onclick=()=>{$('ov').style.display='none';};$('ov').addEventListener('c
 // ---- export map ----
 function exportMap(){
   const W0=W,H0=H,S0=S,OX0=OX,OY0=OY,TW=1000,r=TW/W0;W=TW;H=Math.round(H0*r);S=S0*r;OX=OX0*r;OY=OY0*r;
-  const sc=2,pad=16,hd=70,lg=(st.layer==='gi'||st.layer==='lc')?74:60,ft=50,Ht=hd+H+lg+ft;
+  const sc=2,pad=16,hd=70,lg=st.layer==='lc'?(st.lcHot?122:98):st.layer==='gi'?(LANG==='en'&&!(st.c95||st.fdr)?122:98):60,ft=50,Ht=hd+H+lg+ft;
   const e=document.createElement('canvas');e.width=W*sc;e.height=Ht*sc;const g=e.getContext('2d');
   g.fillStyle=css('--surface');g.fillRect(0,0,e.width,e.height);g.setTransform(sc,0,0,sc,0,0);
   g.fillStyle=css('--ink');g.font='700 20px Sarabun,sans-serif';g.textAlign='left';g.fillText($('mapTitle').textContent,pad,30);
